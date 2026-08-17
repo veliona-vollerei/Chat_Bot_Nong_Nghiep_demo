@@ -1,0 +1,34 @@
+# --- Core Web Framework & Server ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.6
+python-dotenv>=1.0.1
+python-multipart>=0.0.12
+aiofiles>=24.1.0
+
+# --- Database (PostgreSQL) ---
+psycopg2-binary>=2.9.9
+
+# --- Vector Database (ChromaDB) ---
+chromadb>=0.5.15
+
+# --- Google Gemini AI SDK ---
+google-genai>=2.17.0
+
+# --- Embeddings & ML Models ---
+sentence-transformers>=3.1.1
+torch>=2.4.1
+
+# --- Document Parsing & Processing ---
+pymupdf>=1.24.11
+pdfplumber>=0.11.4
+pypdf>=5.0.0
+python-docx>=1.2.0
+
+# --- Vietnamese NLP & Preprocessing ---
+underthesea>=9.5.0
+
+# --- Data Utilities & Helpers ---
+numpy>=1.26.4
+pydantic>=2.9.2
+httpx>=0.27.2
+pillow>=10.4.0,<11.0.0

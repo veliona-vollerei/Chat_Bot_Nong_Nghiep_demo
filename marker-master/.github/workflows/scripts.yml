@@ -1,0 +1,42 @@
+name: Test CLI scripts
+
+on: [push]
+
+env:
+  # T4 (Turing) lacks bf16 - vllm refuses to start with the default dtype
+  VLLM_DTYPE: float16
+
+jobs:
+  tests:
+    runs-on: t4_gpu
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+          enable-cache: true
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+      - name: Install python dependencies
+        run: uv sync --frozen --group dev --extra full
+      - name: Download benchmark data
+        run: |
+          wget -O benchmark_data.zip "https://drive.google.com/uc?export=download&id=1NHrdYatR1rtqs2gPVfdvO0BAvocH8CJi"
+          unzip -o benchmark_data.zip
+      - name: Test single script
+        run: uv run marker_single benchmark_data/pdfs/switch_trans.pdf --page_range 0
+      - name: Test convert script
+        run: uv run marker benchmark_data/pdfs --max_files 1 --page_range 0
+      - name: Text convert script multiple workers
+        run: uv run marker benchmark_data/pdfs --max_files 2 --page_range 0-5
+      - name: Test llm option
+        run: |
+          uv run marker_single benchmark_data/pdfs/switch_trans.pdf --page_range 0 --use_llm > output.txt || echo "Command failed but continuing"
+          if ! grep -q "UserWarning" output.txt; then
+            echo "Success: No UserWarning found"
+            exit 0
+          else
+            echo "Error: UserWarning found in output"
+            exit 1
+          fi

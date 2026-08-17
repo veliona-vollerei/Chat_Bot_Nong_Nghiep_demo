@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Quản Lý Hệ Thống — Nông Nghiệp AI</title>
+    <meta name="description" content="Trang quản lý hệ thống Chatbot Nông nghiệp — Upload dữ liệu và Quản lý người dùng">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="admin-page">
+    <!-- Header Admin -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">🌾</div>
+                <div class="logo-text">
+                    <span class="logo-title">Nông Nghiệp AI</span>
+                    <span class="logo-sub">Trang Quản Lý Hệ Thống (Admin Dashboard)</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="back-chat-btn">
+                    ⬅️ Quay lại Chatbot
+                </a>
+
+                <div class="user-badge" id="userBadge">
+                    <span class="user-avatar">👤</span>
+                    <span class="user-name" id="usernameDisplay">admin</span>
+                    <span class="role-tag" id="userRoleTag">admin</span>
+                </div>
+
+                <button class="logout-btn" id="logoutBtn" onclick="handleLogout()">
+                    🚪 Đăng xuất
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Dashboard Main Layout -->
+    <main class="admin-view-standalone">
+        <div class="admin-container">
+            <div class="admin-header">
+                <div class="admin-title">
+                    <h2>⚙️ Trang Quản Lý Hệ Thống (Admin Dashboard)</h2>
+                    <p>Tải lên tài liệu dữ liệu thô và Quản lý tài khoản người dùng</p>
+                </div>
+            </div>
+
+            <!-- Admin Navigation Tabs -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" id="tabUploadBtn" onclick="switchAdminTab('upload')">
+                    📁 Cập nhật Dữ liệu Thô (Data Pipeline)
+                </button>
+                <button class="admin-tab-btn" id="tabUsersBtn" onclick="switchAdminTab('users')">
+                    👥 Quản lý Người dùng
+                </button>
+            </div>
+
+            <!-- Tab 1: Upload Dữ liệu -->
+            <div class="admin-tab-content" id="adminUploadSection">
+                <div class="upload-card">
+                    <h3>📤 Upload Tài liệu Nông Nghiệp Thô</h3>
+                    <p>Hệ thống tự động sử dụng <strong>marker-master</strong> để chuyển đổi tài liệu (PDF, Word, TXT, MD, JSON) thành Chunks và cập nhật vào kho tri thức.</p>
+                    
+                    <form id="uploadForm" onsubmit="handleAdminUpload(event)">
+                        <div class="file-drop-area">
+                            <input type="file" id="uploadFileInput" accept=".pdf,.docx,.doc,.txt,.md,.json" required>
+                            <div class="drop-text">
+                                <span class="upload-icon">📂</span>
+                                <p>Nhấp vào đây để chọn file hoặc kéo thả file tài liệu vào đây</p>
+                                <span class="file-types">Hỗ trợ: PDF, Word (.docx), TXT, Markdown (.md), JSON</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="admin-submit-btn" id="uploadSubmitBtn">
+                            🚀 Chạy Pipeline & Cập Nhật Tri Thức
+                        </button>
+                    </form>
+
+                    <div class="upload-result hidden" id="uploadResultBox"></div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Quản lý Người dùng -->
+            <div class="admin-tab-content hidden" id="adminUsersSection">
+                <div class="users-card">
+                    <div class="users-card-header">
+                        <h3>👥 Danh sách Tài khoản Người dùng</h3>
+                        <button class="refresh-btn" onclick="loadAdminUsers()">🔄 Tải lại</button>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tài khoản</th>
+                                    <th>Quyền hạn</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center">Đang tải danh sách...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+    <script>
+        // Kiểm tra quyền Admin khi tải trang admin.html
+        document.addEventListener("DOMContentLoaded", () => {
+            const user = JSON.parse(localStorage.getItem("chat_user") || "null");
+            if (!user || user.role !== "admin") {
+                alert("⚠️ Bạn không có quyền truy cập trang Quản lý Hệ thống. Vui lòng đăng nhập với tài khoản Admin.");
+                window.location.href = "/";
+            } else {
+                document.getElementById("usernameDisplay").textContent = user.username;
+                document.getElementById("userRoleTag").textContent = user.role;
+                loadAdminUsers();
+            }
+        });
+    </script>
+</body>
+</html>
