@@ -10,8 +10,23 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-# === Gemini ===
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Phải điền vào .env
+# === Gemini — Key Rotation Pool ===
+# Đọc lần lượt GEMINI_API_KEY_1..4, lọc bỏ key rỗng / placeholder
+_PLACEHOLDER = "your_key_here"
+GEMINI_API_KEYS: list = [
+    k for i in range(1, 5)
+    if (k := os.getenv(f"GEMINI_API_KEY_{i}", "").strip())
+    and k != _PLACEHOLDER
+]
+# Backward-compat: nếu không có key nào từ _1.._4, thử GEMINI_API_KEY cũ
+if not GEMINI_API_KEYS:
+    _legacy = os.getenv("GEMINI_API_KEY", "").strip()
+    if _legacy and _legacy != _PLACEHOLDER:
+        GEMINI_API_KEYS = [_legacy]
+
+# Giữ GEMINI_API_KEY để không break import ở nơi khác còn dùng trực tiếp
+GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
+
 GEMINI_ROUTER_MODEL = os.getenv("GEMINI_ROUTER_MODEL", "gemini-3.1-flash-lite")
 GEMINI_SYNTHESIS_MODEL = os.getenv("GEMINI_SYNTHESIS_MODEL", "gemini-3.5-flash")
 
@@ -53,8 +68,11 @@ MODEL_CACHE_DIR.mkdir(exist_ok=True)
 
 def validate_config():
     errors = []
-    if not GEMINI_API_KEY or "your_" in GEMINI_API_KEY:
-        errors.append("GEMINI_API_KEY chưa được điền vào .env")
+    if not GEMINI_API_KEYS:
+        errors.append(
+            "Chưa có Gemini API Key nào hợp lệ. "
+            "Điền ít nhất 1 key vào GEMINI_API_KEY_1..4 trong .env"
+        )
     if not POSTGRES_PASSWORD or "your_" in POSTGRES_PASSWORD:
         errors.append("POSTGRES_PASSWORD chưa được điền vào .env")
     return errors
@@ -68,6 +86,7 @@ if __name__ == "__main__":
             print(f"  - {e}")
     else:
         print("✅ Cấu hình OK!")
+        print(f"  Gemini Keys: {len(GEMINI_API_KEYS)} key(s) đã nạp")
         print(f"  Postgres : {POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
         print(f"  ChromaDB : {CHROMA_PERSIST_DIR}")
         print(f"  Embedding: {EMBEDDING_MODEL}")

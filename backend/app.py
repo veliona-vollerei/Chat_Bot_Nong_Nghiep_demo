@@ -25,7 +25,7 @@ from backend.db.postgres import (
     create_user, get_user_by_username, get_user_by_id, get_all_users, update_user_block_status,
     delete_user, hash_password
 )
-from backend.ingestion.data_pipeline import process_and_ingest_document, RAW_UPLOADS_DIR
+from backend.ingestion.data_pipeline import process_and_ingest_document, retry_failed_pages, RAW_UPLOADS_DIR
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,
@@ -78,6 +78,11 @@ class FeedbackRequest(BaseModel):
     answer: str
     rating: int  # 1 hoặc -1
     feedback_text: Optional[str] = None
+
+
+class RetryOcrRequest(BaseModel):
+    doc_id: str
+    pdf_filename: str
 
 
 class ChatResponse(BaseModel):
@@ -226,7 +231,14 @@ async def admin_delete_user(user_id: int, username: Optional[str] = None):
 
 @app.post("/api/admin/upload-data")
 async def admin_upload_data(file: UploadFile = File(...), username: Optional[str] = None):
-    """Admin: Upload file dữ liệu thô (PDF, Word, TXT, MD, JSON) -> marker-master -> chunks -> DB."""
+    """Admin: Upload file dữ liệu thô (PDF, Word, TXT, MD, JSON) -> pipeline -> chunks -> DB.
+
+    Response:
+    - status='success': nạp thành công, kèm ocr_stats (nếu là PDF scan).
+    - status='partial_failure' (HTTP 207): OCR thất bại > 15% trang scan, dữ liệu KHÔNG được nạp.
+      Gọi POST /api/admin/retry-ocr để xử lý lại các trang lỗi.
+    - status='error': không trích xuất được văn bản.
+    """
     if username != "admin":
         user = get_user_by_username(username) if username else None
         if not user or user.get("role") != "admin":
@@ -241,12 +253,102 @@ async def admin_upload_data(file: UploadFile = File(...), username: Optional[str
         with open(save_path, "wb") as f:
             f.write(content)
 
-        # Xử lý qua pipeline (dùng marker-master nếu là PDF)
         result = process_and_ingest_document(str(save_path), custom_title=file.filename)
+
+        # Trả HTTP 207 Multi-Status khi OCR thất bại quá ngưỡng
+        if result.get("status") == "partial_failure":
+            return JSONResponse(status_code=207, content=result)
+
         return result
     except Exception as e:
         logger.error(f"Lỗi upload dữ liệu: {e}")
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý file: {str(e)}")
+
+
+@app.post("/api/admin/retry-ocr")
+async def admin_retry_ocr(req: RetryOcrRequest, username: Optional[str] = None):
+    """Admin: OCR lại các trang thất bại trong lần ingest trước.
+
+    Đọc danh sách trang lỗi từ cache (data/page_cache/{doc_id}_pages.json),
+    OCR lại, re-chunk toàn bộ tài liệu và nạp lại vào ChromaDB.
+
+    Body: { "doc_id": str, "pdf_filename": str }
+
+    Response:
+    - status='success': tất cả trang đã OCR thành công.
+    - status='partial_failure' (HTTP 207): vẫn còn trang lỗi sau retry.
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    from backend.ingestion.data_pipeline import RAW_UPLOADS_DIR
+    pdf_path = RAW_UPLOADS_DIR / req.pdf_filename
+
+    if not pdf_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Không tìm thấy file '{req.pdf_filename}' trong thư mục uploads."
+        )
+
+    try:
+        result = retry_failed_pages(str(pdf_path), req.doc_id)
+
+        if result.get("status") == "partial_failure":
+            return JSONResponse(status_code=207, content=result)
+
+        return result
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Lỗi retry OCR: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi retry OCR: {str(e)}")
+
+
+@app.get("/api/admin/key-status")
+async def admin_key_status(username: Optional[str] = None):
+    """Admin: Xem trạng thái pool Gemini API Keys theo thời gian thực.
+
+    Trả về danh sách tất cả keys với:
+    - key_index    : Số thứ tự key (1-based)
+    - key_preview  : 6 ký tự cuối của key (để nhận dạng, không lộ key đầy đủ)
+    - status       : 'active' | 'rate_limited' | 'invalid'
+    - cooldown_remaining_seconds: Giây còn lại trước khi key rate_limited được phục hồi
+    - total_calls  : Tổng số lần gọi thành công
+    - total_errors : Tổng số lần gặp lỗi
+    - rotations_caused: Số lần key này gây ra rotation sang key khác
+    - is_current   : Key này đang được dùng không?
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    from backend.utils.gemini_client import key_manager, AllKeysExhaustedError
+    if key_manager is None:
+        raise HTTPException(
+            status_code=503,
+            detail="GeminiKeyManager chưa khởi tạo. Kiểm tra GEMINI_API_KEY_1..4 trong .env"
+        )
+
+    key_statuses = key_manager.status()
+    total_keys = len(key_statuses)
+    active_count = sum(1 for k in key_statuses if k["status"] == "active")
+    rate_limited_count = sum(1 for k in key_statuses if k["status"] == "rate_limited")
+    invalid_count = sum(1 for k in key_statuses if k["status"] == "invalid")
+
+    return {
+        "summary": {
+            "total_keys": total_keys,
+            "active": active_count,
+            "rate_limited": rate_limited_count,
+            "invalid": invalid_count,
+            "pool_healthy": active_count > 0,
+        },
+        "keys": key_statuses,
+    }
+
 
 
 # ─── System Health ────────────────────────────────────────────

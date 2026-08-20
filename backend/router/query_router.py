@@ -19,12 +19,10 @@ import logging
 from typing import Optional
 # pyrefly: ignore [missing-import]
 from google import genai
-from backend.config import GEMINI_API_KEY, GEMINI_ROUTER_MODEL, GEMINI_SYNTHESIS_MODEL
+from backend.config import GEMINI_ROUTER_MODEL, GEMINI_SYNTHESIS_MODEL
+from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
 
 logger = logging.getLogger(__name__)
-
-# Khởi tạo Gemini client
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 ROUTER_PROMPT = """Bạn là hệ thống phân loại câu hỏi nông nghiệp. Phân tích câu hỏi của nông dân và trả về JSON.
 
@@ -80,7 +78,7 @@ Trả lời:"""
 def route_question(question: str, history: Optional[list] = None) -> dict:
     """
     Phân loại câu hỏi bằng Gemini Router.
-    
+
     Returns:
         {
             "question_type": str,
@@ -98,7 +96,7 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
         history_context = ""
         if history:
             formatted_h = []
-            for msg in history[-4:]: # lấy tối đa 4 lượt tin nhắn gần nhất
+            for msg in history[-4:]:  # lấy tối đa 4 lượt tin nhắn gần nhất
                 role = "Nông dân" if msg.get("sender") == "user" or msg.get("role") == "user" else "Trợ lý"
                 content = msg.get("content", "")
                 formatted_h.append(f"{role}: {content}")
@@ -106,23 +104,40 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
                 history_context = "LỊCH SỬ HỘI THOẠI GẦN ĐÂY:\n" + "\n".join(formatted_h)
 
         prompt = ROUTER_PROMPT.format(question=question, history_context=history_context)
-        response = client.models.generate_content(
-            model=GEMINI_ROUTER_MODEL,
-            contents=prompt
-        )
-        
+
+        def _call_router(client: genai.Client) -> str:
+            response = client.models.generate_content(
+                model=GEMINI_ROUTER_MODEL,
+                contents=prompt
+            )
+            return response.text.strip()
+
+        text = call_with_rotation(_call_router)
+
         # Parse JSON response
-        text = response.text.strip()
         # Xử lý nếu Gemini wrap trong markdown code block
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
-        
+
         result = json.loads(text)
         result["error"] = None
         return result
-        
+
+    except AllKeysExhaustedError as e:
+        logger.error(f"Router AllKeysExhausted: {e}")
+        return {
+            "question_type": "diễn_giải",
+            "crop": "lúa",
+            "season": None,
+            "soil_type": None,
+            "variety": None,
+            "topic_keywords": [question[:50]],
+            "confidence": "low",
+            "clarification_question": None,
+            "error": f"Tất cả Gemini API keys đều không khả dụng: {e}"
+        }
     except json.JSONDecodeError as e:
         logger.error(f"Router JSON parse error: {e}")
         return {
@@ -154,27 +169,30 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
 def synthesize_answer(question: str, data: str, source: str) -> str:
     """
     Dùng Gemini để diễn giải lại dữ liệu thành câu trả lời tự nhiên.
-    Tự động retry nếu gặp lỗi 429 Rate Limit API.
+    Tự động xoay vòng key khi gặp lỗi rate limit / quota exceeded.
     """
-    import time
     prompt = SYNTHESIS_PROMPT.format(
         question=question,
         data=data,
         source=source
     )
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=GEMINI_SYNTHESIS_MODEL,
-                contents=prompt
-            )
-            return response.text.strip()
-        except Exception as e:
-            err_str = str(e)
-            if any(k in err_str for k in ["429", "503", "500", "502", "504", "RESOURCE_EXHAUSTED", "UNAVAILABLE"]):
-                logger.warning(f"Gemini API transient error hit ({e}) in synthesis (thử lần {attempt+1}), tự động đợi {3 * (attempt+1)}s...")
-                time.sleep(3 * (attempt+1))
-            else:
-                logger.error(f"Synthesis error: {e}")
-                break
-    return "Xin lỗi, hệ thống đang bận do hạn mức API. Vui lòng thử lại sau vài giây."
+
+    def _call_synthesis(client: genai.Client) -> str:
+        response = client.models.generate_content(
+            model=GEMINI_SYNTHESIS_MODEL,
+            contents=prompt
+        )
+        return response.text.strip()
+
+    try:
+        return call_with_rotation(
+            _call_synthesis,
+            server_error_retries=3,
+            server_error_backoff=(3, 6, 10),
+        )
+    except AllKeysExhaustedError as e:
+        logger.error(f"Synthesis AllKeysExhausted: {e}")
+        return "Xin lỗi, hệ thống đang bận do hạn mức API. Vui lòng thử lại sau vài giây."
+    except Exception as e:
+        logger.error(f"Synthesis error: {e}")
+        return "Xin lỗi, đã xảy ra lỗi khi xử lý câu trả lời. Vui lòng thử lại."
