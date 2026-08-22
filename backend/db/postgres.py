@@ -75,14 +75,36 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages (session_id, created_at);
 
     CREATE TABLE IF NOT EXISTS documents (
-        document_id     TEXT PRIMARY KEY,
-        title           TEXT NOT NULL,
-        author          TEXT,
-        year_published  INT,
-        publisher       TEXT,
-        legal_basis     TEXT,
-        file_path       TEXT,
-        ingested_at     TIMESTAMP DEFAULT NOW()
+        document_id       TEXT PRIMARY KEY,
+        title             TEXT NOT NULL,
+        author            TEXT,
+        year_published    INT,
+        publisher         TEXT,
+        legal_basis       TEXT,
+        file_path         TEXT,
+        content_hash      VARCHAR(64),
+        original_filename TEXT,
+        processing_status VARCHAR(20) DEFAULT 'complete',
+        updated_at        TIMESTAMP DEFAULT NOW(),
+        ingested_at       TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS document_aliases (
+        id         SERIAL PRIMARY KEY,
+        doc_id     TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+        filename   TEXT NOT NULL,
+        linked_at  TIMESTAMP DEFAULT NOW(),
+        UNIQUE (doc_id, filename)
+    );
+    CREATE INDEX IF NOT EXISTS idx_aliases_doc_id ON document_aliases(doc_id);
+    CREATE INDEX IF NOT EXISTS idx_aliases_filename ON document_aliases(filename);
+
+    CREATE TABLE IF NOT EXISTS pending_confirmations (
+        temp_id      TEXT PRIMARY KEY,
+        action_type  TEXT NOT NULL,
+        context_json JSONB NOT NULL,
+        created_at   TIMESTAMP DEFAULT NOW(),
+        expires_at   TIMESTAMP NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS facts (
@@ -144,6 +166,32 @@ def init_db():
     SQL_MIGRATIONS = """
     ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS username TEXT REFERENCES users(username) ON DELETE CASCADE;
     ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS title TEXT;
+
+    -- documents: thêm cột nhận diện theo content hash (idempotent)
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64);
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS original_filename TEXT;
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS processing_status VARCHAR(20) DEFAULT 'complete';
+    ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+    CREATE INDEX IF NOT EXISTS idx_documents_content_hash ON documents(content_hash);
+    CREATE INDEX IF NOT EXISTS idx_documents_filename ON documents(original_filename);
+
+    CREATE TABLE IF NOT EXISTS document_aliases (
+        id         SERIAL PRIMARY KEY,
+        doc_id     TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+        filename   TEXT NOT NULL,
+        linked_at  TIMESTAMP DEFAULT NOW(),
+        UNIQUE (doc_id, filename)
+    );
+    CREATE INDEX IF NOT EXISTS idx_aliases_doc_id ON document_aliases(doc_id);
+    CREATE INDEX IF NOT EXISTS idx_aliases_filename ON document_aliases(filename);
+
+    CREATE TABLE IF NOT EXISTS pending_confirmations (
+        temp_id      TEXT PRIMARY KEY,
+        action_type  TEXT NOT NULL,
+        context_json JSONB NOT NULL,
+        created_at   TIMESTAMP DEFAULT NOW(),
+        expires_at   TIMESTAMP NOT NULL
+    );
     """
     try:
         with get_cursor() as cur:
@@ -371,3 +419,241 @@ def save_feedback(session_id: str, question: str, answer: str, rating: int, feed
         logger.error(f"Error saving feedback: {e}")
         return False
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Document management — nhận diện theo content hash
+# ──────────────────────────────────────────────────────────────────────────────
+
+def query_document_by_hash(content_hash: str) -> dict:
+    """
+    Tìm tài liệu theo content_hash, bỏ qua bản ghi đã bị thay thế (superseded).
+    Trả về dict bản ghi hoặc None nếu không tìm thấy.
+    """
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                SELECT document_id AS doc_id, title, content_hash, original_filename,
+                       processing_status, updated_at, ingested_at
+                FROM documents
+                WHERE content_hash = %s
+                  AND processing_status != 'superseded'
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """, (content_hash,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"query_document_by_hash error: {e}")
+        return None
+
+
+def query_document_by_filename(filename: str) -> dict:
+    """
+    Tìm tài liệu theo original_filename, bỏ qua bản ghi đã bị thay thế.
+    Trả về bản ghi mới nhất hoặc None.
+    """
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                SELECT document_id AS doc_id, title, content_hash, original_filename,
+                       processing_status, updated_at, ingested_at
+                FROM documents
+                WHERE original_filename = %s
+                  AND processing_status != 'superseded'
+                ORDER BY updated_at DESC
+                LIMIT 1
+            """, (filename,))
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"query_document_by_filename error: {e}")
+        return None
+
+
+def query_alias(doc_id: str, filename: str) -> bool:
+    """Kiểm tra xem filename đã được alias cho doc_id chưa."""
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                SELECT 1 FROM document_aliases
+                WHERE doc_id = %s AND filename = %s
+                LIMIT 1
+            """, (doc_id, filename))
+            return cur.fetchone() is not None
+    except Exception as e:
+        logger.error(f"query_alias error: {e}")
+        return False
+
+
+def get_all_known_filenames(doc_id: str) -> list:
+    """
+    Trả về danh sách tất cả tên đã biết của tài liệu:
+    original_filename (từ bảng documents) + tất cả alias (từ document_aliases).
+    Dùng để kiểm tra case 5 (tên đã từng xác nhận, không hỏi lại).
+    """
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                SELECT original_filename FROM documents
+                WHERE document_id = %s
+            """, (doc_id,))
+            row = cur.fetchone()
+            names = []
+            if row and row["original_filename"]:
+                names.append(row["original_filename"])
+
+            cur.execute("""
+                SELECT filename FROM document_aliases
+                WHERE doc_id = %s
+            """, (doc_id,))
+            for alias_row in cur.fetchall():
+                if alias_row["filename"] not in names:
+                    names.append(alias_row["filename"])
+            return names
+    except Exception as e:
+        logger.error(f"get_all_known_filenames error: {e}")
+        return []
+
+
+def link_alias_filename(doc_id: str, new_filename: str) -> bool:
+    """
+    Thêm tên file mới vào danh sách alias của tài liệu.
+    Bỏ qua nếu đã tồn tại (ON CONFLICT DO NOTHING).
+    """
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                INSERT INTO document_aliases (doc_id, filename)
+                VALUES (%s, %s)
+                ON CONFLICT (doc_id, filename) DO NOTHING
+            """, (doc_id, new_filename))
+        logger.info(f"✅ Đã link alias '{new_filename}' → {doc_id}")
+        return True
+    except Exception as e:
+        logger.error(f"link_alias_filename error: {e}")
+        return False
+
+
+def update_document_status(doc_id: str, status: str) -> bool:
+    """
+    Cập nhật processing_status của tài liệu.
+    status ∈ {'processing', 'partial_failure', 'complete', 'superseded'}
+    """
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                UPDATE documents
+                SET processing_status = %s, updated_at = NOW()
+                WHERE document_id = %s
+            """, (status, doc_id))
+        return True
+    except Exception as e:
+        logger.error(f"update_document_status error: {e}")
+        return False
+
+
+def mark_document_superseded(doc_id: str) -> bool:
+    """
+    Đánh dấu tài liệu là đã bị thay thế (superseded).
+    Dùng cho case 4 khi tài liệu mới đã ingest thành công hoàn toàn.
+    Không xoá bản ghi — giữ lại để audit.
+    """
+    return update_document_status(doc_id, "superseded")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Pending confirmations — quản lý xác nhận từ admin
+# ──────────────────────────────────────────────────────────────────────────────
+
+def save_pending_confirmation(temp_id: str, action_type: str, context_json: dict, expires_at) -> bool:
+    """
+    Lưu context chờ admin xác nhận (case 3, 4).
+    expires_at: datetime object, thường là NOW() + 24h.
+    """
+    import json as _json
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                INSERT INTO pending_confirmations (temp_id, action_type, context_json, expires_at)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (temp_id) DO UPDATE
+                SET action_type = EXCLUDED.action_type,
+                    context_json = EXCLUDED.context_json,
+                    expires_at = EXCLUDED.expires_at
+            """, (temp_id, action_type, _json.dumps(context_json, ensure_ascii=False, default=str), expires_at))
+        return True
+    except Exception as e:
+        logger.error(f"save_pending_confirmation error: {e}")
+        return False
+
+
+def get_pending_confirmation(temp_id: str) -> dict:
+    """Đọc context pending confirmation theo temp_id. Trả None nếu không tìm thấy hoặc đã hết hạn."""
+    try:
+        with get_cursor() as cur:
+            cur.execute("""
+                SELECT temp_id, action_type, context_json, created_at, expires_at
+                FROM pending_confirmations
+                WHERE temp_id = %s AND expires_at > NOW()
+            """, (temp_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            # context_json đã được psycopg2 parse thành dict (JSONB)
+            return dict(row)
+    except Exception as e:
+        logger.error(f"get_pending_confirmation error: {e}")
+        return None
+
+
+def delete_pending_confirmation(temp_id: str) -> bool:
+    """Xoá một pending confirmation sau khi đã xử lý."""
+    try:
+        with get_cursor() as cur:
+            cur.execute("DELETE FROM pending_confirmations WHERE temp_id = %s", (temp_id,))
+        return True
+    except Exception as e:
+        logger.error(f"delete_pending_confirmation error: {e}")
+        return False
+
+
+def cleanup_expired_pending(pending_uploads_dir=None) -> int:
+    """
+    Dọn dẹp các pending_confirmations đã hết hạn (expires_at < NOW()).
+    Đồng thời xoá file tạm tương ứng trong pending_uploads_dir nếu được cung cấp.
+    Trả về số lượng bản ghi đã xoá.
+    """
+    import pathlib
+    deleted = 0
+    try:
+        with get_cursor() as cur:
+            # Lấy danh sách temp_id sắp xoá để dọn file tạm
+            cur.execute("""
+                SELECT temp_id, context_json FROM pending_confirmations
+                WHERE expires_at < NOW()
+            """)
+            expired_rows = cur.fetchall()
+
+            if pending_uploads_dir and expired_rows:
+                for row in expired_rows:
+                    ctx = row["context_json"]
+                    temp_file_path = ctx.get("temp_file_path") if isinstance(ctx, dict) else None
+                    if temp_file_path:
+                        p = pathlib.Path(temp_file_path)
+                        if p.exists():
+                            try:
+                                p.unlink()
+                                logger.info(f"🗑️ Dọn file tạm hết hạn: {p.name}")
+                            except Exception as fe:
+                                logger.warning(f"Không xoá được file tạm {p}: {fe}")
+
+            # Xoá bản ghi hết hạn
+            cur.execute("DELETE FROM pending_confirmations WHERE expires_at < NOW()")
+            deleted = len(expired_rows)
+
+        if deleted > 0:
+            logger.info(f"🧹 Đã dọn {deleted} pending_confirmations hết hạn")
+        return deleted
+    except Exception as e:
+        logger.error(f"cleanup_expired_pending error: {e}")
+        return 0

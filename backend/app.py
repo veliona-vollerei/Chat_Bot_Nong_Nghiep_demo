@@ -1,8 +1,10 @@
 import logging
 import json
 import os
+import uuid
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Depends
 # pyrefly: ignore [missing-import]
@@ -23,9 +25,15 @@ from backend.layers.layer3_docs import semantic_search, get_chunk_count
 from backend.db.postgres import (
     save_chat_message, get_chat_history, get_all_sessions, get_user_sessions, delete_chat_session, save_feedback,
     create_user, get_user_by_username, get_user_by_id, get_all_users, update_user_block_status,
-    delete_user, hash_password
+    delete_user, hash_password,
+    link_alias_filename, save_pending_confirmation, get_pending_confirmation,
+    delete_pending_confirmation, cleanup_expired_pending, mark_document_superseded,
+    update_document_status,
 )
-from backend.ingestion.data_pipeline import process_and_ingest_document, retry_failed_pages, RAW_UPLOADS_DIR
+from backend.ingestion.data_pipeline import (
+    process_and_ingest_document, RAW_UPLOADS_DIR,
+    check_upload_status, compute_content_hash, PENDING_UPLOADS_DIR,
+)
 
 logging.basicConfig(
     level=logging.DEBUG if DEBUG else logging.INFO,
@@ -47,6 +55,17 @@ app.add_middleware(
 )
 
 FRONTEND_DIR = BASE_DIR / "frontend"
+
+
+@app.on_event("startup")
+async def startup_cleanup():
+    """Dọn rác pending_confirmations hết hạn khi server khởi động."""
+    try:
+        n = cleanup_expired_pending(pending_uploads_dir=PENDING_UPLOADS_DIR)
+        if n:
+            logger.info(f"🧹 Startup cleanup: đã dọn {n} pending_confirmations hết hạn")
+    except Exception as e:
+        logger.warning(f"Startup cleanup lỗi (không ảnh hưởng hoạt động): {e}")
 
 
 # ─── Pydantic Models ──────────────────────────────────────────
@@ -80,9 +99,10 @@ class FeedbackRequest(BaseModel):
     feedback_text: Optional[str] = None
 
 
-class RetryOcrRequest(BaseModel):
-    doc_id: str
-    pdf_filename: str
+
+class UploadConfirmRequest(BaseModel):
+    temp_id: str
+    decision: Literal["accept", "reject"]
 
 
 class ChatResponse(BaseModel):
@@ -233,11 +253,12 @@ async def admin_delete_user(user_id: int, username: Optional[str] = None):
 async def admin_upload_data(file: UploadFile = File(...), username: Optional[str] = None):
     """Admin: Upload file dữ liệu thô (PDF, Word, TXT, MD, JSON) -> pipeline -> chunks -> DB.
 
-    Response:
-    - status='success': nạp thành công, kèm ocr_stats (nếu là PDF scan).
-    - status='partial_failure' (HTTP 207): OCR thất bại > 15% trang scan, dữ liệu KHÔNG được nạp.
-      Gọi POST /api/admin/retry-ocr để xử lý lại các trang lỗi.
-    - status='error': không trích xuất được văn bản.
+    Phân loại 5 case theo content hash:
+    - Case 1 'process_new'              : Tài liệu mới — xử lý bình thường.
+    - Case 2 'auto_continue'            : Nội dung đã có, dở dang — ingest lại từ đầu.
+    - Case 3 'confirm_duplicate_content': Nội dung trùng, tên khác — hỏi admin (HTTP 409).
+    - Case 4 'confirm_content_changed'  : Cùng tên, nội dung khác — hỏi admin (HTTP 409).
+    - Case 5 'already_complete'         : Nội dung + tên đã có — bỏ qua (HTTP 200).
     """
     if username != "admin":
         user = get_user_by_username(username) if username else None
@@ -247,15 +268,94 @@ async def admin_upload_data(file: UploadFile = File(...), username: Optional[str
     if not file.filename:
         raise HTTPException(status_code=400, detail="Vui lòng chọn file dữ liệu.")
 
-    save_path = RAW_UPLOADS_DIR / file.filename
-    try:
-        content = await file.read()
+    file_bytes = await file.read()
+    filename = file.filename
+
+    # Kiểm tra trạng thái upload trước khi lưu file
+    status_info = check_upload_status(file_bytes, filename)
+    action = status_info["action"]
+
+    # ─── Case 5: Đã tồn tại hoàn toàn (tên + nội dung) ───
+    if action == "already_complete":
+        return JSONResponse(status_code=200, content={
+            "status": "already_complete",
+            "doc_id": status_info["doc_id"],
+            "note": "Tài liệu này đã tồn tại đầy đủ (tên đã được ghi nhận trước đó), không cần xử lý lại.",
+        })
+
+    # ─── Case 2: Tiếp tục xử lý dở dang ───
+    if action == "auto_continue":
+        doc_id = status_info["doc_id"]
+        # Lưu file vào RAW_UPLOADS (ghi đè nếu đã có)
+        save_path = RAW_UPLOADS_DIR / filename
         with open(save_path, "wb") as f:
-            f.write(content)
+            f.write(file_bytes)
+        try:
+            content_hash = status_info.get("content_hash") or compute_content_hash(file_bytes)
+            result = process_and_ingest_document(
+                str(save_path),
+                custom_title=filename,
+                content_hash=content_hash,
+                original_filename=filename,
+            )
+            result["note"] = "Tiếp tục xử lý tài liệu dở dang (ingest lại từ đầu — không còn retry OCR)."
+            return result
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except Exception as e:
+            logger.error(f"Lỗi auto_continue: {e}")
+            raise HTTPException(status_code=500, detail=f"Lỗi tiếp tục xử lý: {str(e)}")
 
-        result = process_and_ingest_document(str(save_path), custom_title=file.filename)
+    # ─── Case 3 & 4: Cần xác nhận từ admin ───
+    if action in ("confirm_duplicate_content", "confirm_content_changed"):
+        temp_id = str(uuid.uuid4())
+        temp_file_path = PENDING_UPLOADS_DIR / f"{temp_id}.pdf"
+        with open(temp_file_path, "wb") as f:
+            f.write(file_bytes)
 
-        # Trả HTTP 207 Multi-Status khi OCR thất bại quá ngưỡng
+        expires_at = datetime.utcnow() + timedelta(hours=24)
+        context = {
+            **status_info,
+            "filename": filename,
+            "temp_file_path": str(temp_file_path),
+        }
+        save_pending_confirmation(temp_id, action, context, expires_at)
+
+        if action == "confirm_duplicate_content":
+            detail_msg = (
+                f"Nội dung file này đã tồn tại trong hệ thống (doc_id: {status_info['doc_id']}) "
+                f"với các tên: {status_info.get('existing_filenames', [])}. "
+                f"Gọi POST /api/admin/upload-data/confirm để thêm alias hoặc hủy."
+            )
+        else:
+            detail_msg = (
+                f"File cùng tên nhưng nội dung đã thay đổi so với bản đã có "
+                f"(old_doc_id: {status_info['old_doc_id']}). "
+                f"Gọi POST /api/admin/upload-data/confirm để thay thế hoặc giữ nguyên."
+            )
+
+        return JSONResponse(status_code=409, content={
+            "status": action,
+            "temp_id": temp_id,
+            "detail": detail_msg,
+            **{k: v for k, v in status_info.items() if k != "action"},
+            "expires_at": expires_at.isoformat(),
+        })
+
+    # ─── Case 1: Tài liệu mới hoàn toàn ───
+    save_path = RAW_UPLOADS_DIR / filename
+    try:
+        with open(save_path, "wb") as f:
+            f.write(file_bytes)
+
+        content_hash = status_info.get("content_hash") or compute_content_hash(file_bytes)
+        result = process_and_ingest_document(
+            str(save_path),
+            custom_title=filename,
+            content_hash=content_hash,
+            original_filename=filename,
+        )
+
         if result.get("status") == "partial_failure":
             return JSONResponse(status_code=207, content=result)
 
@@ -265,45 +365,161 @@ async def admin_upload_data(file: UploadFile = File(...), username: Optional[str
         raise HTTPException(status_code=500, detail=f"Lỗi xử lý file: {str(e)}")
 
 
-@app.post("/api/admin/retry-ocr")
-async def admin_retry_ocr(req: RetryOcrRequest, username: Optional[str] = None):
-    """Admin: OCR lại các trang thất bại trong lần ingest trước.
+@app.post("/api/admin/upload-data/confirm")
+async def admin_confirm_upload(req: UploadConfirmRequest, username: Optional[str] = None):
+    """Admin: Xác nhận hoặc từ chối tài liệu đang chờ (case 3, 4).
 
-    Đọc danh sách trang lỗi từ cache (data/page_cache/{doc_id}_pages.json),
-    OCR lại, re-chunk toàn bộ tài liệu và nạp lại vào ChromaDB.
+    Body: { "temp_id": str, "decision": "accept" | "reject" }
 
-    Body: { "doc_id": str, "pdf_filename": str }
+    Case 3 (confirm_duplicate_content):
+      - accept : Thêm tên file mới vào alias, không OCR lại.
+      - reject : Hủy, không lưu gì thêm.
 
-    Response:
-    - status='success': tất cả trang đã OCR thành công.
-    - status='partial_failure' (HTTP 207): vẫn còn trang lỗi sau retry.
+    Case 4 (confirm_content_changed):
+      - accept : Ingest bản mới trước; nếu thành công thì xoá chunk cũ và đánh dấu
+                 bản cũ là superseded. Nếu partial_failure thì GIỮ bản cũ, báo admin retry.
+      - reject : Giữ nguyên dữ liệu cũ, không thay đổi gì.
     """
     if username != "admin":
         user = get_user_by_username(username) if username else None
         if not user or user.get("role") != "admin":
             raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
 
-    from backend.ingestion.data_pipeline import RAW_UPLOADS_DIR
-    pdf_path = RAW_UPLOADS_DIR / req.pdf_filename
-
-    if not pdf_path.exists():
+    pending = get_pending_confirmation(req.temp_id)
+    if not pending:
         raise HTTPException(
             status_code=404,
-            detail=f"Không tìm thấy file '{req.pdf_filename}' trong thư mục uploads."
+            detail="Yêu cầu không tồn tại hoặc đã hết hạn (24h). Vui lòng upload lại file."
         )
 
-    try:
-        result = retry_failed_pages(str(pdf_path), req.doc_id)
+    action_type = pending["action_type"]
+    context = pending["context_json"]
+    if not isinstance(context, dict):
+        import json as _json
+        context = _json.loads(context)
 
-        if result.get("status") == "partial_failure":
-            return JSONResponse(status_code=207, content=result)
+    temp_file_path = Path(context.get("temp_file_path", ""))
+    filename = context.get("filename", "")
 
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        logger.error(f"Lỗi retry OCR: {e}")
-        raise HTTPException(status_code=500, detail=f"Lỗi khi retry OCR: {str(e)}")
+    def _cleanup_temp():
+        """Xoá file tạm và pending record sau khi xử lý xong."""
+        if temp_file_path.exists():
+            try:
+                temp_file_path.unlink()
+            except Exception as e:
+                logger.warning(f"Không xoá được file tạm {temp_file_path}: {e}")
+        delete_pending_confirmation(req.temp_id)
+
+    # ═══ CASE 3: confirm_duplicate_content ═══
+    if action_type == "confirm_duplicate_content":
+        doc_id = context.get("doc_id")
+
+        if req.decision == "reject":
+            _cleanup_temp()
+            return {"status": "rejected_duplicate", "message": "Hủy upload. Dữ liệu không được thay đổi."}
+
+        # accept: chỉ thêm alias, không OCR lại
+        ok = link_alias_filename(doc_id, filename)
+        _cleanup_temp()
+        if ok:
+            return {
+                "status": "success",
+                "action": "alias_added",
+                "doc_id": doc_id,
+                "new_filename": filename,
+                "message": f"Tên '{filename}' đã được liên kết với tài liệu đã có. Không có OCR nào được gọi thêm.",
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Lỗi khi lưu alias. Vui lòng thử lại.")
+
+    # ═══ CASE 4: confirm_content_changed ═══
+    if action_type == "confirm_content_changed":
+        old_doc_id = context.get("old_doc_id")
+
+        if req.decision == "reject":
+            _cleanup_temp()
+            return {
+                "status": "update_cancelled",
+                "message": "Hủy cập nhật. Dữ liệu cũ không được thay đổi.",
+            }
+
+        # accept: ingest bản mới TRƯỚC, xoá cũ SAU khi xác nhận thành công
+        if not temp_file_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"File tạm không tìm thấy. Vui lòng upload lại."
+            )
+
+        try:
+            new_content_hash = compute_content_hash(temp_file_path.read_bytes())
+            # Lưu vào RAW_UPLOADS và ingest bản mới
+            new_save_path = RAW_UPLOADS_DIR / filename
+            import shutil
+            shutil.copy2(str(temp_file_path), str(new_save_path))
+
+            new_result = process_and_ingest_document(
+                str(new_save_path),
+                custom_title=filename,
+                content_hash=new_content_hash,
+                original_filename=filename,
+            )
+
+            new_status = new_result.get("status")
+            new_doc_id = new_result.get("doc_id")
+
+            if new_status == "success":
+                # Ingest thành công — bây giờ mới an toàn xoá dữ liệu cũ
+                try:
+                    from backend.db.chroma_db import get_collection
+                    collection = get_collection()
+                    collection.delete(where={"source_document_id": old_doc_id})
+                    logger.info(f"🗑️ Đã xoá chunk cũ của {old_doc_id} trong ChromaDB")
+                except Exception as e:
+                    logger.error(f"Lỗi xoá chunk cũ ChromaDB: {e}")
+
+                mark_document_superseded(old_doc_id)
+                _cleanup_temp()
+
+                return {
+                    "status": "success",
+                    "action": "content_replaced",
+                    "new_doc_id": new_doc_id,
+                    "old_doc_id_superseded": old_doc_id,
+                    "message": f"Tài liệu đã được thay thế thành công. Bản cũ ({old_doc_id}) đã được đánh dấu superseded.",
+                    "extract_stats": new_result.get("extract_stats"),
+                }
+
+            elif new_status == "partial_failure":
+                # Ingest mới thất bại giữa chừng — GIỮ NGUYÊN bản cũ
+                # Giữ lại file tạm (có thể cần cho retry-ocr tiếp)
+                # CHỈ xoá pending record để giải phóng slot (admin sẽ upload lại khi cần)
+                delete_pending_confirmation(req.temp_id)
+                logger.warning(
+                    f"⚠️ Ingest bản mới partial_failure. Bản cũ {old_doc_id} vẫn đang hoạt động."
+                )
+                return JSONResponse(status_code=207, content={
+                    "status": "new_version_partial_failure",
+                    "new_doc_id": new_doc_id,
+                    "old_doc_id_still_active": old_doc_id,
+                    "message": (
+                        "Ingest phiên bản mới thất bại. Bản cũ vẫn đang được sử dụng. "
+                        f"Vui lòng upload lại file '{filename}' để thử lại."
+                    ),
+                })
+
+            else:
+                # error kác
+                _cleanup_temp()
+                raise HTTPException(status_code=500, detail=f"Lỗi ingest: {new_result.get('message', 'Không rõ')}")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Lỗi confirm_content_changed accept: {e}")
+            raise HTTPException(status_code=500, detail=f"Lỗi xử lý: {str(e)}")
+
+    raise HTTPException(status_code=400, detail=f"action_type không hợp lệ: {action_type}")
+
 
 
 @app.get("/api/admin/key-status")
