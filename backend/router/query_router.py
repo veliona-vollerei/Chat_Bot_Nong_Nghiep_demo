@@ -108,7 +108,12 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
         def _call_router(client: genai.Client) -> str:
             response = client.models.generate_content(
                 model=GEMINI_ROUTER_MODEL,
-                contents=prompt
+                contents=prompt,
+                config={
+                    "temperature": 0.1,
+                    "max_output_tokens": 512,
+                    "response_mime_type": "application/json",
+                }
             )
             return response.text.strip()
 
@@ -180,7 +185,10 @@ def synthesize_answer(question: str, data: str, source: str) -> str:
     def _call_synthesis(client: genai.Client) -> str:
         response = client.models.generate_content(
             model=GEMINI_SYNTHESIS_MODEL,
-            contents=prompt
+            contents=prompt,
+            config={
+                "temperature": 0.2,
+            }
         )
         return response.text.strip()
 

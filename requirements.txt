@@ -18,11 +18,13 @@ google-genai>=2.17.0
 sentence-transformers>=3.1.1
 torch>=2.4.1
 
-# --- Document Parsing & Processing ---
-pymupdf>=1.24.11
-pdfplumber>=0.11.4
-pypdf>=5.0.0
-python-docx>=1.2.0
+# --- Document Parsing & Processing (marker-master) ---
+# marker-master dùng trực tiếp từ thư mục marker-master/ (sys.path)
+# Dependencies của marker-master:
+weasyprint>=61.0        # Chuyển DOCX/HTML → PDF (DocumentProvider)
+mammoth>=1.4.0          # Chuyển DOCX → HTML (DocumentProvider)
+python-pptx>=1.0.0      # Đọc PPTX (PowerPointProvider)
+openpyxl>=3.1.0         # Đọc XLSX (SpreadSheetProvider)
 
 # --- Vietnamese NLP & Preprocessing ---
 underthesea>=9.5.0

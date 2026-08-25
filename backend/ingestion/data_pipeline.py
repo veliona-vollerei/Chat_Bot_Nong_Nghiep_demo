@@ -1,7 +1,8 @@
 """
-Data Pipeline — Xử lý tài liệu thô nông nghiệp (PDF, DOCX, TXT, MD, JSON)
-Sử dụng PyMuPDF để đọc PDF. Chỉ lấy trang có chữ điện tử sẵn có (>= 50 ký tự).
-Trang scan/ảnh thuần túy sẽ bị bỏ qua, không OCR (đã tắt — tốn API quá nhiều).
+Data Pipeline — Xử lý tài liệu thô nông nghiệp (PDF, DOCX, PPTX, XLSX, EPUB, HTML, TXT, MD, JSON)
+Sử dụng marker-master để đọc tài liệu. Chỉ lấy chữ kỹ thuật số có sẵn trong file.
+OCR đã tắt (disable_ocr=True) — không khởi động inference server, không xử lý ảnh scan.
+Trang scan/ảnh thuần túy sẽ bị bỏ qua tự động mà không cần OCR.
 """
 import os
 import sys
@@ -30,6 +31,36 @@ RAW_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 # Thư mục lưu file tạm đang chờ admin xác nhận (case 3, 4)
 PENDING_UPLOADS_DIR = BASE_DIR / "data" / "pending_uploads"
 PENDING_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Cấu hình marker-master path — thêm vào sys.path để import trực tiếp
+# ──────────────────────────────────────────────────────────────────────────────
+_MARKER_DIR = str(BASE_DIR / "marker-master")
+if _MARKER_DIR not in sys.path:
+    sys.path.insert(0, _MARKER_DIR)
+
+# Định dạng marker hỗ trợ (ngoài txt/md/json xử lý riêng)
+MARKER_SUPPORTED_EXTENSIONS = {
+    ".pdf", ".docx", ".doc", ".pptx", ".ppt",
+    ".xlsx", ".xls", ".epub", ".html", ".htm",
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Khởi tạo marker model dict một lần duy nhất (lazy — chỉ load khi cần)
+# ──────────────────────────────────────────────────────────────────────────────
+_marker_model_dict: Optional[Dict[str, Any]] = None
+
+
+def _get_marker_models() -> Dict[str, Any]:
+    """Lazy-load marker model dict (chỉ load lần đầu, tái dùng sau đó)."""
+    global _marker_model_dict
+    if _marker_model_dict is None:
+        logger.info("🔧 Đang khởi tạo marker model dict (lần đầu)...")
+        # pyrefly: ignore [missing-import]
+        from marker.models import create_model_dict
+        _marker_model_dict = create_model_dict()
+        logger.info("✅ Marker model dict đã sẵn sàng.")
+    return _marker_model_dict
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -87,73 +118,78 @@ def check_upload_status(file_bytes: bytes, filename: str) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 1. extract_text_from_pdf — CHỈ lấy trang có chữ điện tử, bỏ qua trang scan
+# 1. extract_text_with_marker — Dùng marker-master để trích xuất văn bản
+#    Hỗ trợ: PDF, DOCX, PPTX, XLSX, EPUB, HTML
+#    OCR đã TẮT (disable_ocr=True) — chỉ đọc chữ kỹ thuật số, bỏ qua ảnh scan
 # ──────────────────────────────────────────────────────────────────────────────
 
-def extract_text_from_pdf(pdf_path: Path, doc_id: str = "") -> Tuple[str, Dict[str, Any]]:
+def extract_text_with_marker(
+    file_path: Path,
+    doc_id: str = "",
+) -> Tuple[str, Dict[str, Any]]:
     """
-    Rút trích văn bản từ file PDF — CHỈ lấy trang có chữ điện tử sẵn có
-    (>= 50 ký tự qua PyMuPDF). Trang scan/ảnh thuần túy sẽ bị bỏ qua,
-    không OCR (đã tắt theo yêu cầu — tốn API quá nhiều).
+    Trích xuất văn bản từ tài liệu bằng marker-master.
+    Hỗ trợ: .pdf, .docx, .doc, .pptx, .ppt, .xlsx, .xls, .epub, .html
+
+    OCR đã TẮT — chỉ đọc chữ kỹ thuật số có sẵn trong file.
+    Trang scan/ảnh thuần túy sẽ bị bỏ qua tự động (không crash, không tốn API).
 
     Returns:
-        (full_text, extract_stats)
-        extract_stats = {
-            "total_pages": int,
-            "pages_with_text": int,
-            "pages_skipped_no_text": int,
-            "skipped_page_numbers": [int, ...],
+        (markdown_text, stats)
+        stats = {
+            "extractor": "marker",
+            "file_type": str,
+            "page_count": int,
+            "char_count": int,
+            "ocr_disabled": True,
         }
     """
     # pyrefly: ignore [missing-import]
-    import fitz  # PyMuPDF
-    stats = {
-        "total_pages": 0, "pages_with_text": 0,
-        "pages_skipped_no_text": 0, "skipped_page_numbers": [],
+    from marker.converters.pdf import PdfConverter
+
+    stats: Dict[str, Any] = {
+        "extractor": "marker",
+        "file_type": file_path.suffix.lower(),
+        "page_count": 0,
+        "char_count": 0,
+        "ocr_disabled": True,
     }
-    try:
-        doc = fitz.open(str(pdf_path))
-        stats["total_pages"] = len(doc)
-        pages_text = []
-        for i, page in enumerate(doc):
-            text = page.get_text() or ""
-            if len(text.strip()) >= 50:
-                pages_text.append(f"\n--- Trang {i+1} ---\n" + text.strip())
-                stats["pages_with_text"] += 1
-            else:
-                stats["pages_skipped_no_text"] += 1
-                stats["skipped_page_numbers"].append(i + 1)
 
-        full_text = "\n\n".join(pages_text)
-        logger.info(
-            f"📄 {pdf_path.name}: {stats['pages_with_text']}/{stats['total_pages']} "
-            f"trang có chữ điện tử, {stats['pages_skipped_no_text']} trang bị bỏ qua "
-            f"(ảnh scan, không OCR)."
+    try:
+        model_dict = _get_marker_models()
+
+        # Config: tắt OCR, tắt LLM, tắt debug
+        config = {
+            "disable_ocr": True,   # Không dùng OCR — chỉ đọc chữ kỹ thuật số
+            "use_llm": False,      # Không dùng LLM processor
+            "disable_tqdm": True,  # Ẩn progress bar trong log
+        }
+
+        converter = PdfConverter(
+            artifact_dict=model_dict,
+            config=config,
         )
-        return full_text, stats
+
+        rendered = converter(str(file_path))
+
+        # rendered là MarkdownOutput: .markdown, .images, .metadata
+        markdown_text = rendered.markdown or ""
+        stats["char_count"] = len(markdown_text)
+
+        # Lấy page count từ converter nếu có
+        if hasattr(converter, "page_count") and converter.page_count:
+            stats["page_count"] = converter.page_count
+
+        logger.info(
+            f"📄 marker [{file_path.suffix.upper()}] {file_path.name}: "
+            f"{stats['char_count']:,} ký tự, "
+            f"{stats['page_count']} trang, OCR=OFF"
+        )
+        return markdown_text, stats
+
     except Exception as e:
-        logger.error(f"Lỗi extract_text_from_pdf: {e}")
+        logger.error(f"❌ Lỗi extract_text_with_marker({file_path.name}): {e}")
         return "", stats
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# extract_text_from_docx
-# ──────────────────────────────────────────────────────────────────────────────
-
-def extract_text_from_docx(docx_path: Path) -> str:
-    """Rút trích văn bản từ file Word (.docx)."""
-    try:
-        # pyrefly: ignore [missing-import]
-        import docx
-        doc = docx.Document(str(docx_path))
-        full_text = []
-        for para in doc.paragraphs:
-            if para.text.strip():
-                full_text.append(para.text.strip())
-        return "\n\n".join(full_text)
-    except Exception as e:
-        logger.error(f"Lỗi đọc file docx {docx_path.name}: {e}")
-        return ""
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -200,9 +236,14 @@ def process_and_ingest_document(
 ) -> Dict[str, Any]:
     """
     Quy trình xử lý hoàn chỉnh 1 file tài liệu:
-    1. Đọc văn bản thô (chỉ chữ điện tử với PDF, không OCR)
+    1. Đọc văn bản thô qua marker-master (không OCR)
     2. Chia chunks
     3. Tạo metadata & lưu vào ChromaDB + PostgreSQL
+
+    Định dạng hỗ trợ:
+      marker-master (không OCR): .pdf, .docx, .doc, .pptx, .ppt,
+                                  .xlsx, .xls, .epub, .html, .htm
+      Xử lý riêng (không cần marker): .txt, .md, .json
 
     Tham số bổ sung:
       content_hash      : SHA-256 của file bytes (nếu đã tính sẵn ở upstream)
@@ -224,31 +265,34 @@ def process_and_ingest_document(
     ext = fp.suffix.lower()
     raw_text = ""
     chunks_list = []
-    extract_stats = None
+    extract_stats: Optional[Dict[str, Any]] = None
 
-    if ext == ".pdf":
-        raw_text, extract_stats = extract_text_from_pdf(fp, doc_id=doc_id)
-    elif ext in [".docx", ".doc"]:
-        raw_text = extract_text_from_docx(fp)
-    elif ext in [".txt", ".md"]:
+    # ── Định dạng xử lý bằng marker-master ──
+    if ext in MARKER_SUPPORTED_EXTENSIONS:
+        raw_text, extract_stats = extract_text_with_marker(fp, doc_id=doc_id)
+
+        if extract_stats and extract_stats.get("char_count", 0) == 0:
+            logger.warning(
+                f"⚠️ {fp.name}: marker không trích xuất được chữ nào "
+                f"(có thể toàn ảnh scan — OCR đã tắt)."
+            )
+
+    # ── Định dạng đơn giản xử lý trực tiếp ──
+    elif ext in (".txt", ".md"):
         raw_text = fp.read_text(encoding="utf-8", errors="ignore")
+
     elif ext == ".json":
         data = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
         if isinstance(data, list):
-            chunks_list = [str(item.get("text", item)) if isinstance(item, dict) else str(item) for item in data]
+            chunks_list = [
+                str(item.get("text", item)) if isinstance(item, dict) else str(item)
+                for item in data
+            ]
         else:
             raw_text = str(data)
+
     else:
         raise ValueError(f"Định dạng file không được hỗ trợ: {ext}")
-
-    # Cảnh báo thông tin nếu có trang scan bị bỏ qua (không chặn nạp dữ liệu)
-    if extract_stats and extract_stats["pages_skipped_no_text"] > 0:
-        skip_ratio = extract_stats["pages_skipped_no_text"] / extract_stats["total_pages"]
-        logger.warning(
-            f"⚠️ {extract_stats['pages_skipped_no_text']}/{extract_stats['total_pages']} "
-            f"trang ({skip_ratio:.1%}) là ảnh scan, KHÔNG được nạp vào hệ thống "
-            f"(đã tắt OCR). Trang: {extract_stats['skipped_page_numbers']}"
-        )
 
     if not chunks_list and raw_text:
         chunks_list = chunk_text(raw_text)
@@ -313,4 +357,3 @@ def process_and_ingest_document(
         result["extract_stats"] = extract_stats
 
     return result
-

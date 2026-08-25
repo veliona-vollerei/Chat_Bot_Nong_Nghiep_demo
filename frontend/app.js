@@ -230,6 +230,9 @@ async function loadCurrentSessionMessages() {
     container.innerHTML = "";
     conversationHistory = [];
 
+    // Luôn hiển thị thông điệp chào mừng ở đầu khung trò chuyện
+    renderWelcomeMessage();
+
     if (data.messages && data.messages.length > 0) {
       data.messages.forEach((msg) => {
         if (msg.sender === "user") {
@@ -252,8 +255,6 @@ async function loadCurrentSessionMessages() {
           conversationHistory.push({ role: "assistant", content: msg.content });
         }
       });
-    } else {
-      renderWelcomeMessage();
     }
   } catch (err) {
     console.error("Lỗi tải tin nhắn phiên:", err);
@@ -559,20 +560,26 @@ function toggleAdminDashboard() {
 function switchAdminTab(tab) {
   const tabUploadBtn = document.getElementById("tabUploadBtn");
   const tabUsersBtn = document.getElementById("tabUsersBtn");
+  const tabBenchmarkBtn = document.getElementById("tabBenchmarkBtn");
   const uploadSection = document.getElementById("adminUploadSection");
   const usersSection = document.getElementById("adminUsersSection");
+  const benchmarkSection = document.getElementById("adminBenchmarkSection");
+
+  // Hide all, deactivate all
+  [uploadSection, usersSection, benchmarkSection].forEach(s => s && s.classList.add("hidden"));
+  [tabUploadBtn, tabUsersBtn, tabBenchmarkBtn].forEach(b => b && b.classList.remove("active"));
 
   if (tab === "upload") {
     tabUploadBtn.classList.add("active");
-    tabUsersBtn.classList.remove("active");
     uploadSection.classList.remove("hidden");
-    usersSection.classList.add("hidden");
-  } else {
+  } else if (tab === "users") {
     tabUsersBtn.classList.add("active");
-    tabUploadBtn.classList.remove("active");
     usersSection.classList.remove("hidden");
-    uploadSection.classList.add("hidden");
     loadAdminUsers();
+  } else if (tab === "benchmark") {
+    tabBenchmarkBtn.classList.add("active");
+    benchmarkSection.classList.remove("hidden");
+    loadBenchmarkResults();
   }
 }
 
@@ -717,6 +724,142 @@ async function adminDeleteUser(userId, username) {
   } catch (err) {
     alert("❌ Lỗi kết nối máy chủ!");
   }
+}
+
+// ─── Benchmark / Đo lường ──────────────────────────────────────────────────
+
+let _benchmarkQuestions = []; // [{id, question, ground_truth, status, ...}]
+
+async function loadBenchmarkResults() {
+  if (!currentUser || currentUser.role !== "admin") return;
+
+  const emptyEl = document.getElementById("benchmarkEmpty");
+  const tableEl = document.getElementById("benchmarkTable");
+  const tbody = document.getElementById("benchmarkTableBody");
+
+  emptyEl.style.display = "block";
+  emptyEl.innerHTML = `<span>⏳</span><p>Đang tải danh sách câu hỏi đo lường từ Q&amp;E.txt...</p>`;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/benchmark/results?username=${currentUser.username}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      emptyEl.innerHTML = `<span>❌</span><p style="color:var(--accent-red)">${escapeHtml(data.detail || "Lỗi tải kết quả")}</p>`;
+      return;
+    }
+
+    _benchmarkQuestions = data.questions || [];
+
+    tbody.innerHTML = "";
+    _benchmarkQuestions.forEach(q => {
+      const tr = document.createElement("tr");
+      tr.id = `bench-row-${q.id}`;
+
+      if (q.status === "evaluated") {
+        const gk = q.grade_key || "fail";
+        const gradeClass = `score-badge score-${gk}`;
+        const shortAns = q.chatbot_answer
+          ? escapeHtml(q.chatbot_answer.substring(0, 180)) + (q.chatbot_answer.length > 180 ? "…" : "")
+          : "—";
+        const detailId = `detail-${q.id}`;
+
+        tr.innerHTML = `
+          <td class="bench-id">${q.id}</td>
+          <td class="bench-q">${escapeHtml(q.question)}</td>
+          <td class="bench-gt">${escapeHtml(q.ground_truth)}</td>
+          <td class="bench-ans"><span class="bench-answer-text">${shortAns}</span></td>
+          <td class="bench-score">
+            <div class="score-cell">
+              <span class="${gradeClass}">${q.grade_label}</span>
+              <span class="score-number">${q.answer_correctness}%</span>
+              <div class="score-breakdown">
+                <span>Thực: ${q.factual_score}%</span>
+                <span>Nghĩa: ${q.semantic_score}%</span>
+              </div>
+            </div>
+          </td>
+          <td class="bench-detail">
+            <button class="detail-toggle-btn" onclick="toggleDetail('${detailId}')">Chi tiết ▼</button>
+            <div class="bench-detail-content" id="${detailId}" style="display:none">
+              <p><strong>💬 Câu người dùng hỏi:</strong> ${escapeHtml(q.user_question || q.question)}</p>
+              <p><strong>🔍 Retrieval:</strong> ${escapeHtml(q.retrieval_note || "—")}</p>
+              <p><strong>✍️ Generation:</strong> ${escapeHtml(q.generation_note || "—")}</p>
+              <p><strong>📝 Nhận xét:</strong> ${escapeHtml(q.reasoning || "—")}</p>
+            </div>
+          </td>
+        `;
+      } else {
+        tr.innerHTML = `
+          <td class="bench-id">${q.id}</td>
+          <td class="bench-q">${escapeHtml(q.question)}</td>
+          <td class="bench-gt">${escapeHtml(q.ground_truth)}</td>
+          <td class="bench-ans"><span class="bench-pending" style="color:var(--text-muted);font-style:italic">⏳ Chưa có người dùng hỏi câu này</span></td>
+          <td class="bench-score"><span class="bench-pending" style="background:rgba(255,255,255,0.05);color:var(--text-muted);padding:4px 8px;border-radius:12px;font-size:12px">Chờ kích hoạt</span></td>
+          <td class="bench-detail"><span class="bench-pending" style="color:var(--text-muted)">—</span></td>
+        `;
+      }
+      tbody.appendChild(tr);
+    });
+
+    emptyEl.style.display = "none";
+    tableEl.style.display = "table";
+
+    // Summary bar
+    document.getElementById("benchmarkSummary").style.display = "flex";
+    document.getElementById("summTotal").textContent = data.total_questions;
+    document.getElementById("summDone").textContent = `${data.evaluated_count} / ${data.total_questions}`;
+    document.getElementById("summAvg").textContent = data.evaluated_count > 0 ? `${data.average_score}%` : "—";
+
+    updateBenchmarkSummaryFromData(_benchmarkQuestions.filter(q => q.status === "evaluated"));
+
+  } catch (err) {
+    emptyEl.innerHTML = `<span>❌</span><p style="color:var(--accent-red)">Lỗi kết nối: ${err.message}</p>`;
+  }
+}
+
+async function resetBenchmarkResults() {
+  if (!confirm("Bạn có chắc chắn muốn xoá toàn bộ kết quả đo lường đã lưu?")) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/benchmark/results?username=${currentUser.username}`, { method: "DELETE" });
+    if (res.ok) {
+      alert("✅ Đã xoá toàn bộ kết quả đo lường!");
+      loadBenchmarkResults();
+    } else {
+      alert("❌ Lỗi khi xoá kết quả.");
+    }
+  } catch (err) {
+    alert("❌ Lỗi kết nối: " + err.message);
+  }
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const btn = el.previousElementSibling;
+  if (el.style.display === "none") {
+    el.style.display = "block";
+    btn.textContent = "Chi tiết ▲";
+  } else {
+    el.style.display = "none";
+    btn.textContent = "Chi tiết ▼";
+  }
+}
+
+function updateBenchmarkSummaryFromData(evaluatedItems) {
+  if (!evaluatedItems || !evaluatedItems.length) {
+    document.getElementById("summGrades").innerHTML = `<span style="color:var(--text-muted);font-size:12px">Chưa có câu hỏi nào được kích hoạt</span>`;
+    return;
+  }
+
+  const counts = { excellent: 0, good: 0, fair: 0, poor: 0, fail: 0 };
+  evaluatedItems.forEach(r => { if (counts[r.grade_key] !== undefined) counts[r.grade_key]++; });
+  const labels = { excellent: "Xuất sắc", good: "Tốt", fair: "Khá", poor: "Chưa đạt", fail: "Kém" };
+  const gradesEl = document.getElementById("summGrades");
+  gradesEl.innerHTML = Object.entries(counts)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `<span class="grade-chip grade-chip-${k}">${labels[k]}: ${v}</span>`)
+    .join("");
 }
 
 // ─── Helpers ───────────────────────────────────────────────

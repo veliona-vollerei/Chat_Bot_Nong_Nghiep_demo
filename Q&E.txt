@@ -1,0 +1,19 @@
+1,câu hỏi: Biến đổi khí hậu là gì? 
+ trả lời: Biến đổi khí hậu: là giá trị trung bình của các yếu tố thời tiết (nhiệt độ, mưa, gió...) thay đổi (có xu thế tăng, hay giảm). Sự thay đổi này chỉ có thể nhận thấy được trong thời gian dài.
+2,câu hỏi: Theo khoản 29 Điều 3 Luật Bảo vệ môi trường 2020, khí nhà kính được định nghĩa như thế nào và gồm các khí chính nào?
+ trả lời: Theo khoản 29 Điều 3 Luật Bảo vệ môi trường 2020, khí nhà kính là loại khí trong khí quyển gây hiệu ứng nhà kính. Các khí nhà kính chính là 
+ carbon dioxide (CO2), methane (CH4) và nitrous oxide (N2O).
+3,câu hỏi: Tín chỉ carbon là gì theo quy định tại khoản 35 Điều 3 Luật Bảo vệ môi trường 2020?
+ trả lời: Tín chỉ carbon là chứng nhận để giao dịch thương mại và thể hiện quyền phát thải lượng khí nhà kính, cụ thể là CO2 quy đổi. Tín chỉ carbon đại diện cho quyền phát thải 1 tấn CO2 hoặc 1 lượng khí nhà kính khác tương đương với 1 tấn khí CO2 vào bầu khí quyển
+4,câu hỏi: Nội dung của kỹ thuật "3 giảm 3 tăng" trong canh tác lúa gồm những gì?
+ trả lời: - 3 giảm gồm: Giảm lượng giống gieo sạ; giảm lượng thuốc BVTV; giảm lượng phân đạm. - 3 tăng gồm: Tăng năng suất lúa; tăng chất lượng lúa gạo; tăng hiệu quả kinh tế.
+5,câu hỏi: Nguyên tắc của kỹ thuật canh tác "1 phải 5 giảm" là gì?  
+ trả lời: Nguyên tắc của kĩ thuật canh tác 1 phải 5 giảm là: 1 phải: Phải sử dụng giống lúa xác nhận. 5 giảm: Giảm giống, giảm nƣớc, giảm phân bón, giảm thuốc bảo vệ thực vật và giảm thất thoát sau thu hoạch.
+6,câu hỏi: Mức nhiệt độ thích hợp nhất cho cây lúa ở thời kỳ đẻ nhánh, làm đòng là bao nhiêu?
+ trả lời: Thời kỳ đẻ nhánh, làm đòng : Nhiệt độ thích hợp nhất là 25-320C. Nhiệt độ thấp dƣới 160C hay cao hơn 380C đều không thuận lợi cho việc đẻ nhánh, làm đòng của cây lúa.
+7,câu hỏi:  Trình bày cách thực hiện tạo hình đa thân, không hãm ngọn cho cây cà phê.
+ trả lời: Tạo hình đa thân, không hãm ngọn: trồng 1 cây/hố, sau đó tiến hành nuôi thêm 2 - 3 thân phụ ngay từ năm đầu tiên ở vị trí càng sát mặt đất càng tốt. Vào những năm kinh doanh, sau khi thu hoạch xong, cắt bỏ những thân không hiệu quả, nuôi chồi mới để tiếp tục khai thác năng suất ở những năm sau. Mỗi gốc chỉ nuôi từ 3 - 4 thân.
+8,câu hỏi: Yêu cầu về độ sâu của tầng đất mặt đối với đất trồng cà phê là như thế nào?
+ trả lời:Đất trồng cà phê phải có tầng sâu tối thiểu là 70 cm. Tầng đất càng sâu thì bộ rễ càng phát triển mạnh, có thể ăn sâu xuống đất để hút nƣớc và chất dinh dƣỡng để nuôi cây.
+9,câu hỏi: Yêu cầu về lượng nước tưới của cây cà phê vối so với cà phê chè và cà phê mít như thế nào?
+ trả lời: So với cây cà phê chè (Arabica) hoặc cà phê mít (Liberca) thì cà phê vối có khả năng chịu hạn kém nhất. Trong điều kiện của một số tỉnh ở phía Nam và Tây Nguyên Việt Nam, do có mua khô kéo dài từ 5 - 6 tháng, nên để cây sinh trƣởng phát triển tốt và cho năng suất cao cần kết hợp tƣới tiêu 3 - 5 lần với lƣợng nƣớc trung bình cho mỗi lần tƣới là 500 - 600 m3/ha

@@ -57,6 +57,9 @@
                 <button class="admin-tab-btn" id="tabUsersBtn" onclick="switchAdminTab('users')">
                     👥 Quản lý Người dùng
                 </button>
+                <button class="admin-tab-btn" id="tabBenchmarkBtn" onclick="switchAdminTab('benchmark')">
+                    📊 Đo lường Hiệu năng
+                </button>
             </div>
 
             <!-- Tab 1: Upload Dữ liệu -->
@@ -108,6 +111,75 @@
                                     <td colspan="6" class="text-center">Đang tải danh sách...</td>
                                 </tr>
                             </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Benchmark / Đo lường -->
+            <div class="admin-tab-content hidden" id="adminBenchmarkSection">
+                <div class="benchmark-card">
+                    <div class="benchmark-card-header">
+                        <div>
+                            <h3>📊 Đo lường Hiệu năng Chatbot</h3>
+                            <p>Đánh giá LLM-as-a-Judge theo bộ câu hỏi chuẩn từ file Q&amp;E.txt</p>
+                            <p class="benchmark-auto-note" id="benchmarkAutoNote" style="color:var(--accent-gold);font-size:12px;margin-top:4px">
+                                🎯 Đánh giá tự động khi người dùng hỏi câu trùng với danh sách Q&amp;E.txt (các câu chưa hỏi sẽ ở trạng thái chờ)
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <button class="benchmark-reload-btn" id="benchmarkReloadBtn" onclick="loadBenchmarkResults()">
+                                🔄 Cập nhật bảng
+                            </button>
+                            <button class="benchmark-reload-btn" style="background:rgba(239,68,68,0.15);color:#ef4444;border-color:rgba(239,68,68,0.3)" onclick="resetBenchmarkResults()">
+                                🗑️ Xoá kết quả
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Bar -->
+                    <div class="benchmark-summary" id="benchmarkSummary" style="display:none">
+                        <div class="summary-item">
+                            <span class="summary-label">Tổng câu Q&amp;E</span>
+                            <span class="summary-value" id="summTotal">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Đã được hỏi</span>
+                            <span class="summary-value" id="summDone">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Điểm TB</span>
+                            <span class="summary-value" id="summAvg" style="color:var(--accent-gold)">-</span>
+                        </div>
+                        <div class="summary-grades" id="summGrades"></div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="benchmark-progress-wrap" id="benchmarkProgressWrap" style="display:none">
+                        <div class="benchmark-progress-bar">
+                            <div class="benchmark-progress-fill" id="benchmarkProgressFill" style="width:0%"></div>
+                        </div>
+                        <span class="benchmark-progress-label" id="benchmarkProgressLabel">0 / 0</span>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="benchmark-table-wrapper" id="benchmarkTableWrapper">
+                        <div class="benchmark-empty" id="benchmarkEmpty">
+                            <span>⏳</span>
+                            <p>Đang tải danh sách câu hỏi đo lường...</p>
+                        </div>
+                        <table class="benchmark-table" id="benchmarkTable" style="display:none">
+                            <thead>
+                                <tr>
+                                    <th style="width:3%">#</th>
+                                    <th style="width:20%">Câu hỏi</th>
+                                    <th style="width:22%">Đáp án chuẩn</th>
+                                    <th style="width:25%">Đáp án Chatbot</th>
+                                    <th style="width:14%">Điểm &amp; Xếp loại</th>
+                                    <th style="width:16%">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody id="benchmarkTableBody"></tbody>
                         </table>
                     </div>
                 </div>

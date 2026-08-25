@@ -306,7 +306,12 @@ def save_chat_session(session_id: str, username: str = None, title: str = "Trò 
                 VALUES (%s, %s, %s)
                 ON CONFLICT (session_id) DO UPDATE
                 SET updated_at = NOW(),
-                    username = COALESCE(EXCLUDED.username, chat_sessions.username)
+                    username = COALESCE(EXCLUDED.username, chat_sessions.username),
+                    title = CASE
+                        WHEN chat_sessions.title IS NULL OR chat_sessions.title IN ('Trò chuyện mới', 'Phiên hiện tại', 'Phiên trò chuyện mới', 'Đoạn chat mới')
+                        THEN EXCLUDED.title
+                        ELSE chat_sessions.title
+                    END
             """, (session_id, username, title))
     except Exception as e:
         logger.error(f"Error saving chat session: {e}")

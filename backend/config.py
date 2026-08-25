@@ -28,7 +28,7 @@ if not GEMINI_API_KEYS:
 GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
 
 GEMINI_ROUTER_MODEL = os.getenv("GEMINI_ROUTER_MODEL", "gemini-3.1-flash-lite")
-GEMINI_SYNTHESIS_MODEL = os.getenv("GEMINI_SYNTHESIS_MODEL", "gemini-3.5-flash")
+GEMINI_SYNTHESIS_MODEL = os.getenv("GEMINI_SYNTHESIS_MODEL", "gemini-3.6-flash")
 
 # === PostgreSQL (Tầng 1 + Tầng 2 KG) ===
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")

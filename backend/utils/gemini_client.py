@@ -37,6 +37,9 @@ _INVALID_KEY_KEYWORDS = [
 _SERVER_ERROR_KEYWORDS = [
     "500", "502", "503", "504", "UNAVAILABLE", "INTERNAL",
 ]
+_NOT_FOUND_KEYWORDS = [
+    "404", "not_found", "not found", "is no longer available",
+]
 
 
 # ── Custom Exceptions ───────────────────────────────────────────────────────
@@ -49,9 +52,11 @@ class AllKeysExhaustedError(Exception):
 def _classify_gemini_error(err_str: str) -> str:
     """
     Phân loại lỗi Gemini API.
-    Returns: 'rate_limit' | 'invalid_key' | 'server_error' | 'other'
+    Returns: 'rate_limit' | 'invalid_key' | 'server_error' | 'not_found' | 'other'
     """
     err_lower = err_str.lower()
+    if any(k.lower() in err_lower for k in _NOT_FOUND_KEYWORDS):
+        return "not_found"
     if any(k.lower() in err_lower for k in _RATE_LIMIT_KEYWORDS):
         return "rate_limit"
     if any(k.lower() in err_lower for k in _INVALID_KEY_KEYWORDS):
@@ -308,6 +313,10 @@ def call_with_rotation(
             except Exception as e:
                 err_str = str(e)
                 error_type = _classify_gemini_error(err_str)
+
+                if error_type == "not_found":
+                    logger.error(f"❌ Model không tồn tại hoặc đã bị Google gỡ bỏ: {e}")
+                    raise e
 
                 if error_type == "server_error":
                     server_attempt += 1

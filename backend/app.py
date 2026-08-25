@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import json
 import os
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Literal
 # pyrefly: ignore [missing-import]
-from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Depends, Response
 # pyrefly: ignore [missing-import]
 from fastapi.staticfiles import StaticFiles
 # pyrefly: ignore [missing-import]
@@ -59,13 +60,19 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 
 @app.on_event("startup")
 async def startup_cleanup():
-    """Dọn rác pending_confirmations hết hạn khi server khởi động."""
+    """Dọn rác pending_confirmations hết hạn & pre-warm embedding model khi server khởi động."""
     try:
         n = cleanup_expired_pending(pending_uploads_dir=PENDING_UPLOADS_DIR)
         if n:
             logger.info(f"🧹 Startup cleanup: đã dọn {n} pending_confirmations hết hạn")
     except Exception as e:
         logger.warning(f"Startup cleanup lỗi (không ảnh hưởng hoạt động): {e}")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Tránh lỗi 404 Not Found khi trình duyệt tự động xin icon."""
+    return Response(status_code=204)
 
 
 # ─── Pydantic Models ──────────────────────────────────────────
@@ -566,8 +573,482 @@ async def admin_key_status(username: Optional[str] = None):
     }
 
 
+# ─── Benchmark / Đo lường ──────────────────────────────────────────────────
+class BenchmarkRunRequest(BaseModel):
+    questions: list  # [{id, question, ground_truth}, ...]
 
-# ─── System Health ────────────────────────────────────────────
+
+def _parse_qe_file() -> list:
+    """
+    Parse file Q&E.txt tại thư mục gốc chatbot.
+    Format:
+        N,câu hỏi: <nội dung>
+         trả lời: <nội dung> (có thể nhiều dòng)
+    Trả về list[{id, question, ground_truth}]
+    """
+    qe_path = BASE_DIR / "Q&E.txt"
+    if not qe_path.exists():
+        return []
+
+    text = qe_path.read_text(encoding="utf-8", errors="ignore")
+    lines = text.splitlines()
+
+    pairs = []
+    current_id = None
+    current_q = None
+    current_a_lines = []
+
+    def flush():
+        if current_id is not None and current_q:
+            pairs.append({
+                "id": current_id,
+                "question": current_q.strip(),
+                "ground_truth": " ".join(current_a_lines).strip(),
+            })
+
+    import re
+    q_pattern = re.compile(r"^(\d+)\s*,\s*câu\s*hỏi\s*:\s*(.+)", re.IGNORECASE)
+    a_pattern = re.compile(r"^\s*trả\s*lời\s*:\s*(.+)", re.IGNORECASE)
+    a_continue = re.compile(r"^\s+(.+)")
+
+    for line in lines:
+        qm = q_pattern.match(line)
+        if qm:
+            flush()
+            current_id = int(qm.group(1))
+            current_q = qm.group(2)
+            current_a_lines = []
+            continue
+
+        am = a_pattern.match(line)
+        if am:
+            current_a_lines = [am.group(1)]
+            continue
+
+        # Continuation line (indented) — ghép vào answer đang xây dựng
+        if current_a_lines and (line.startswith(" ") or line.startswith("\t")):
+            cont = line.strip()
+            if cont:
+                current_a_lines.append(cont)
+
+    flush()
+    return pairs
+
+
+JUDGE_PROMPT_TEMPLATE = """Bạn là giám khảo AI chuyên đánh giá chất lượng câu trả lời của chatbot nông nghiệp.
+
+Câu hỏi: {question}
+
+Đáp án chuẩn (Ground Truth):
+{ground_truth}
+
+Đáp án của Chatbot:
+{chatbot_answer}
+
+Hãy chấm điểm theo 2 tiêu chí và trả về JSON thuần túy (không markdown, không giải thích ngoài):
+
+{{
+  "factual_score": <số nguyên 0-100, mức độ chính xác số liệu, tên gọi, thông số kỹ thuật>,
+  "semantic_score": <số nguyên 0-100, mức độ đúng ý nghĩa và trọng tâm>,
+  "retrieval_note": "<nhận xét ngắn gọn về khả năng tìm kiếm và lấy dữ liệu đúng>",
+  "generation_note": "<nhận xét ngắn gọn về chất lượng tổng hợp và diễn đạt>",
+  "reasoning": "<lý do xếp loại tổng thể trong 1-2 câu>"
+}}
+
+Lưu ý:
+- factual_score: 100 = tất cả số liệu/thông số hoàn toàn chính xác; 0 = sai hoàn toàn hoặc bịa đặt.
+- semantic_score: 100 = trả lời đúng trọng tâm, đủ ý; 0 = lạc đề hoặc không liên quan.
+- Chỉ trả về JSON, không có text nào khác."""
+
+
+def _grade_score(score: float) -> tuple:
+    """Trả về (tên xếp loại, css class key)"""
+    if score >= 90:
+        return ("Xuất sắc", "excellent")
+    if score >= 80:
+        return ("Tốt", "good")
+    if score >= 70:
+        return ("Khá", "fair")
+    if score >= 50:
+        return ("Chưa đạt", "poor")
+    return ("Kém", "fail")
+
+BENCHMARK_RESULTS_FILE = BASE_DIR / "benchmark_results.json"
+
+
+def _normalize_question(q: str) -> str:
+    """Chuẩn hoá câu hỏi để so sánh: thường hoá, cắt whitespace."""
+    return " ".join(q.lower().strip().split())
+
+
+def _question_similarity(a: str, b: str) -> float:
+    """Tính độ tương đồng giữa 2 chuỗi (0.0 - 1.0)."""
+    import difflib
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _load_benchmark_results() -> dict:
+    """Nạp kết quả benchmark từ file JSON."""
+    if BENCHMARK_RESULTS_FILE.exists():
+        try:
+            return json.loads(BENCHMARK_RESULTS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"results": {}}
+
+
+def _save_benchmark_results(data: dict):
+    """Lưu kết quả benchmark ra file JSON."""
+    BENCHMARK_RESULTS_FILE.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+
+
+def _is_question_match(user_q: str, qe_q: str) -> tuple[bool, float]:
+    """
+    So sánh câu hỏi của user và câu trong Q&E.txt:
+    dùng kết hợp SequenceMatcher ratio và token set overlap ratio.
+    """
+    import difflib
+    u_norm = _normalize_question(user_q)
+    q_norm = _normalize_question(qe_q)
+    
+    ratio = difflib.SequenceMatcher(None, u_norm, q_norm).ratio()
+    if ratio >= 0.70:
+        return True, ratio
+        
+    u_words = set(u_norm.split())
+    q_words = set(q_norm.split())
+    if not u_words or not q_words:
+        return False, 0.0
+        
+    jaccard = len(u_words & q_words) / len(u_words | q_words)
+    contain_ratio = len(u_words & q_words) / min(len(u_words), len(q_words))
+    
+    if jaccard >= 0.55 or contain_ratio >= 0.75:
+        return True, max(ratio, jaccard)
+        
+    return False, ratio
+
+
+async def _check_and_record_qe_match(question: str, answer: str):
+    """
+    Background: nếu câu hỏi của user trùng với một câu trong Q&E.txt,
+    tự động chấm điểm duy nhất cho câu trùng đó và lưu kết quả.
+    """
+    try:
+        pairs = _parse_qe_file()
+        if not pairs:
+            return
+
+        best_match = None
+        best_sim = 0.0
+
+        for pair in pairs:
+            matched, sim = _is_question_match(question, pair["question"])
+            if matched and sim > best_sim:
+                best_sim = sim
+                best_match = pair
+
+        if not best_match:
+            return
+
+        logger.info(f"ℹ️  Q&E match: câu #{best_match['id']} (sim={best_sim:.2f}) — bắt đầu chấm điểm...")
+
+        from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
+        from google import genai as _genai
+        from backend.config import GEMINI_SYNTHESIS_MODEL
+
+        judge_prompt = JUDGE_PROMPT_TEMPLATE.format(
+            question=best_match["question"],
+            ground_truth=best_match["ground_truth"],
+            chatbot_answer=answer,
+        )
+
+        def _call_judge(client: _genai.Client) -> str:
+            resp = client.models.generate_content(
+                model=GEMINI_SYNTHESIS_MODEL,
+                contents=judge_prompt,
+                config={
+                    "temperature": 0.1,
+                    "max_output_tokens": 1024,
+                    "response_mime_type": "application/json",
+                },
+            )
+            return resp.text.strip() if resp.text else ""
+
+        judge_raw = await asyncio.to_thread(call_with_rotation, _call_judge)
+        judge_text = judge_raw.strip()
+        if judge_text.startswith("```"):
+            judge_text = "\n".join(judge_text.split("\n")[1:])
+            judge_text = judge_text.rsplit("```", 1)[0].strip()
+
+        judge_data = json.loads(judge_text)
+
+        factual = max(0.0, min(100.0, float(judge_data.get("factual_score", 0))))
+        semantic = max(0.0, min(100.0, float(judge_data.get("semantic_score", 0))))
+        answer_correctness = round(factual * 0.6 + semantic * 0.4, 1)
+        grade_label, grade_key = _grade_score(answer_correctness)
+
+        data = _load_benchmark_results()
+        qid = str(best_match["id"])
+        data["results"][qid] = {
+            "id": best_match["id"],
+            "question": best_match["question"],
+            "ground_truth": best_match["ground_truth"],
+            "user_question": question,          # câu người dùng đã hỏi thực sự
+            "chatbot_answer": answer,
+            "factual_score": round(factual, 1),
+            "semantic_score": round(semantic, 1),
+            "answer_correctness": answer_correctness,
+            "grade_label": grade_label,
+            "grade_key": grade_key,
+            "retrieval_note": judge_data.get("retrieval_note", ""),
+            "generation_note": judge_data.get("generation_note", ""),
+            "reasoning": judge_data.get("reasoning", ""),
+            "triggered_at": datetime.now().isoformat(),
+            "similarity_score": round(best_sim, 3),
+        }
+        _save_benchmark_results(data)
+        logger.info(f"✅ Benchmark: câu #{best_match['id']} được lưu — điểm={answer_correctness}%")
+
+    except Exception as e:
+        logger.warning(f"Benchmark auto-check lỗi (không ảnh hưởng chat): {e}")
+
+
+async def _get_chatbot_answer(question: str) -> str:
+    """Lấy câu trả lời từ chatbot bằng cách gọi thẳng hàm chat() endpoint."""
+    try:
+        req = ChatRequest(
+            session_id="benchmark_internal",
+            username="admin",
+            question=question,
+            conversation_history=[],
+        )
+        resp = await chat(req)
+        return resp.answer
+    except Exception as e:
+        logger.error(f"Lỗi _get_chatbot_answer: {e}")
+        return f"[Lỗi xử lý: {str(e)}]"
+
+
+@app.get("/api/admin/benchmark/results")
+async def benchmark_get_results(username: Optional[str] = None):
+    """
+    Admin: Lấy kết quả đánh giá benchmark theo các câu hỏi trong Q&E.txt.
+    Các câu chưa được người dùng hỏi trùng sẽ có trạng thái 'pending'.
+    Các câu đã được hỏi trùng sẽ có điểm số và xếp loại chi tiết ('evaluated').
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    pairs = _parse_qe_file()
+    if not pairs:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hoặc không parse được file Q&E.txt.")
+
+    saved_data = _load_benchmark_results().get("results", {})
+
+    combined = []
+    evaluated_count = 0
+    total_score = 0.0
+
+    for pair in pairs:
+        qid = str(pair["id"])
+        if qid in saved_data:
+            res = saved_data[qid]
+            evaluated_count += 1
+            total_score += res.get("answer_correctness", 0.0)
+            combined.append({
+                "id": pair["id"],
+                "question": pair["question"],
+                "ground_truth": pair["ground_truth"],
+                "status": "evaluated",
+                **res
+            })
+        else:
+            combined.append({
+                "id": pair["id"],
+                "question": pair["question"],
+                "ground_truth": pair["ground_truth"],
+                "status": "pending",
+                "chatbot_answer": None,
+                "factual_score": None,
+                "semantic_score": None,
+                "answer_correctness": None,
+                "grade_label": "Chưa kích hoạt",
+                "grade_key": "pending",
+                "retrieval_note": None,
+                "generation_note": None,
+                "reasoning": "Chưa có người dùng hỏi câu trùng với câu này.",
+            })
+
+    avg_score = round(total_score / evaluated_count, 1) if evaluated_count > 0 else 0.0
+
+    return {
+        "total_questions": len(pairs),
+        "evaluated_count": evaluated_count,
+        "average_score": avg_score,
+        "questions": combined,
+    }
+
+
+@app.delete("/api/admin/benchmark/results")
+async def benchmark_reset_results(username: Optional[str] = None):
+    """Admin: Reset xoá toàn bộ kết quả benchmark đã lưu."""
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    if BENCHMARK_RESULTS_FILE.exists():
+        try:
+            BENCHMARK_RESULTS_FILE.unlink()
+        except Exception as e:
+            logger.error(f"Lỗi xoá file benchmark_results.json: {e}")
+            raise HTTPException(status_code=500, detail="Không thể xoá file kết quả.")
+    return {"status": "success", "message": "Đã xoá toàn bộ kết quả đo lường."}
+
+
+@app.get("/api/admin/benchmark/questions")
+async def benchmark_get_questions(username: Optional[str] = None):
+    """Admin: Lấy danh sách câu hỏi từ Q&E.txt để benchmark."""
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    pairs = _parse_qe_file()
+    if not pairs:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hoặc không parse được file Q&E.txt.")
+
+    return {"questions": pairs, "total": len(pairs)}
+
+
+@app.post("/api/admin/benchmark/run")
+async def benchmark_run(req: BenchmarkRunRequest, username: Optional[str] = None):
+    """
+    Admin: Chạy benchmark — đánh giá chatbot theo từng câu hỏi.
+    Trả về NDJSON streaming: mỗi dòng là 1 JSON kết quả của 1 câu.
+    """
+    # pyrefly: ignore [missing-import]
+    from fastapi.responses import StreamingResponse
+    import asyncio
+
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    questions = req.questions
+    if not questions:
+        raise HTTPException(status_code=400, detail="Danh sách câu hỏi rỗng.")
+
+    from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
+
+    async def generate():
+        for item in questions:
+            qid = item.get("id", 0)
+            question = item.get("question", "")
+            ground_truth = item.get("ground_truth", "")
+
+            result = {
+                "id": qid,
+                "question": question,
+                "ground_truth": ground_truth,
+                "chatbot_answer": "",
+                "factual_score": 0,
+                "semantic_score": 0,
+                "answer_correctness": 0.0,
+                "grade_label": "Kém",
+                "grade_key": "fail",
+                "retrieval_note": "",
+                "generation_note": "",
+                "reasoning": "",
+                "error": None,
+            }
+
+            try:
+                # Bước 1: Lấy câu trả lời từ chatbot
+                chatbot_answer = await _get_chatbot_answer(question)
+                result["chatbot_answer"] = chatbot_answer
+
+                # Bước 2: Chấm điểm bằng LLM
+                judge_prompt = JUDGE_PROMPT_TEMPLATE.format(
+                    question=question,
+                    ground_truth=ground_truth,
+                    chatbot_answer=chatbot_answer,
+                )
+
+                # pyrefly: ignore [missing-import]
+                from google import genai as _genai
+                from backend.config import GEMINI_SYNTHESIS_MODEL
+
+                def _call_judge(client: _genai.Client) -> str:
+                    resp = client.models.generate_content(
+                        model=GEMINI_SYNTHESIS_MODEL,
+                        contents=judge_prompt,
+                        config={
+                            "temperature": 0.1,
+                            "max_output_tokens": 400,
+                            "response_mime_type": "application/json",
+                        }
+                    )
+                    return resp.text.strip()
+
+                judge_raw = call_with_rotation(_call_judge)
+
+                # Parse JSON từ judge response
+                judge_text = judge_raw.strip()
+                # Bỏ markdown code fences nếu có
+                if judge_text.startswith("```"):
+                    judge_text = "\n".join(judge_text.split("\n")[1:])
+                    judge_text = judge_text.rsplit("```", 1)[0].strip()
+
+                judge_data = json.loads(judge_text)
+
+                factual = float(judge_data.get("factual_score", 0))
+                semantic = float(judge_data.get("semantic_score", 0))
+                # Clamp [0, 100]
+                factual = max(0.0, min(100.0, factual))
+                semantic = max(0.0, min(100.0, semantic))
+
+                answer_correctness = round(factual * 0.6 + semantic * 0.4, 1)
+                grade_label, grade_key = _grade_score(answer_correctness)
+
+                result.update({
+                    "factual_score": round(factual, 1),
+                    "semantic_score": round(semantic, 1),
+                    "answer_correctness": answer_correctness,
+                    "grade_label": grade_label,
+                    "grade_key": grade_key,
+                    "retrieval_note": judge_data.get("retrieval_note", ""),
+                    "generation_note": judge_data.get("generation_note", ""),
+                    "reasoning": judge_data.get("reasoning", ""),
+                })
+
+            except AllKeysExhaustedError:
+                result["error"] = "Đã cạn API key Gemini. Vui lòng thử lại sau."
+            except json.JSONDecodeError as e:
+                result["error"] = f"Không parse được kết quả chấm điểm: {e}"
+            except Exception as e:
+                logger.error(f"Benchmark lỗi câu {qid}: {e}")
+                result["error"] = str(e)
+
+            yield json.dumps(result, ensure_ascii=False) + "\n"
+            # Nhường vòng lặp event loop để không block
+            await asyncio.sleep(0)
+
+    return StreamingResponse(
+        generate(),
+        media_type="application/x-ndjson",
+        headers={"X-Content-Type-Options": "nosniff"},
+    )
+
+
+
 @app.get("/health")
 async def health_check():
     """Kiểm tra trạng thái hệ thống."""
@@ -632,7 +1113,7 @@ async def chat(request: ChatRequest):
     norm_question = normalized["normalized"]
     
     # ─── Bước 2: Router phân loại (truyền conversation_history) ─
-    routing = route_question(norm_question, history=request.conversation_history)
+    routing = await asyncio.to_thread(route_question, norm_question, history=request.conversation_history)
     question_type = routing.get("question_type", "diễn_giải")
     crop = routing.get("crop", "nông nghiệp tổng quát")
     season = routing.get("season") or extract_season(norm_question)
@@ -738,7 +1219,8 @@ async def chat(request: ChatRequest):
         layer_used = "Tầng 3 — Document Store"
         search_query = " ".join(keywords) if keywords else norm_question
         
-        doc_result = semantic_search(
+        doc_result = await asyncio.to_thread(
+            semantic_search,
             query=search_query,
             crop=crop,
             season=season,
@@ -769,7 +1251,8 @@ async def chat(request: ChatRequest):
         )
     
     # ─── Bước 7: Tổng hợp câu trả lời ─────────────────────────
-    final_answer = synthesize_answer(
+    final_answer = await asyncio.to_thread(
+        synthesize_answer,
         question=question,
         data=answer_data,
         source=f"Nguồn: {source_info} | Kho tri thức Nông nghiệp"
@@ -781,6 +1264,9 @@ async def chat(request: ChatRequest):
         "source": source_info,
         "is_partial": is_partial
     }, username=request.username)
+    
+    # ─── Ghi nhận ngầm nếu câu hỏi trùng với Q&E.txt ───
+    asyncio.create_task(_check_and_record_qe_match(question, final_answer))
     
     return ChatResponse(
         session_id=session_id,
