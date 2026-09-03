@@ -242,7 +242,7 @@ async function loadCurrentSessionMessages() {
           let metaData = {};
           try {
             metaData = typeof msg.metadata === "string" ? JSON.parse(msg.metadata) : msg.metadata || {};
-          } catch (e) {}
+          } catch (e) { }
 
           appendBotResponse({
             session_id: currentSessionId,
@@ -646,7 +646,7 @@ async function loadAdminUsers() {
     let html = "";
     data.users.forEach((u) => {
       const isBlocked = u.is_blocked;
-      const statusBadge = isBlocked 
+      const statusBadge = isBlocked
         ? `<span class="badge-blocked">Đã bị chặn 🚫</span>`
         : `<span class="badge-active">Hoạt động ✅</span>`;
 
@@ -774,8 +774,8 @@ async function loadBenchmarkResults() {
               <span class="${gradeClass}">${q.grade_label}</span>
               <span class="score-number">${q.answer_correctness}%</span>
               <div class="score-breakdown">
-                <span>Thực: ${q.factual_score}%</span>
-                <span>Nghĩa: ${q.semantic_score}%</span>
+                <span>Độ chính xác: ${q.factual_score}%</span>
+                <span>Mức độ đúng: ${q.semantic_score}%</span>
               </div>
             </div>
           </td>

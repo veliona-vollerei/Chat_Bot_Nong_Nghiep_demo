@@ -757,6 +757,7 @@ async def _check_and_record_qe_match(question: str, answer: str):
         logger.info(f"ℹ️  Q&E match: câu #{best_match['id']} (sim={best_sim:.2f}) — bắt đầu chấm điểm...")
 
         from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
+        # pyrefly: ignore [missing-import]
         from google import genai as _genai
         from backend.config import GEMINI_SYNTHESIS_MODEL
 
