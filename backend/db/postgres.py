@@ -167,13 +167,44 @@ def init_db():
     ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS username TEXT REFERENCES users(username) ON DELETE CASCADE;
     ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS title TEXT;
 
-    -- documents: thêm cột nhận diện theo content hash (idempotent)
     ALTER TABLE documents ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64);
     ALTER TABLE documents ADD COLUMN IF NOT EXISTS original_filename TEXT;
     ALTER TABLE documents ADD COLUMN IF NOT EXISTS processing_status VARCHAR(20) DEFAULT 'complete';
     ALTER TABLE documents ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
     CREATE INDEX IF NOT EXISTS idx_documents_content_hash ON documents(content_hash);
     CREATE INDEX IF NOT EXISTS idx_documents_filename ON documents(original_filename);
+
+    -- Migration cho các yêu cầu mới
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS confidence_score FLOAT DEFAULT 1.0;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS last_verified TIMESTAMP;
+
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS system_version TEXT DEFAULT 'v1.0';
+
+    CREATE TABLE IF NOT EXISTS farms (
+        farm_id    SERIAL PRIMARY KEY,
+        name       TEXT NOT NULL,
+        location   TEXT,
+        owner_id   INTEGER REFERENCES users(user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS user_farm_permissions (
+        user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+        farm_id INTEGER REFERENCES farms(farm_id) ON DELETE CASCADE,
+        role    TEXT NOT NULL,
+        PRIMARY KEY (user_id, farm_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS benchmark_jobs (
+        job_id      TEXT PRIMARY KEY,
+        status      TEXT NOT NULL DEFAULT 'pending',
+        questions   JSONB NOT NULL,
+        results     JSONB,
+        error_msg   TEXT,
+        triggered_by TEXT,
+        created_at  TIMESTAMP DEFAULT NOW(),
+        updated_at  TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_benchmark_jobs_status ON benchmark_jobs(status);
 
     CREATE TABLE IF NOT EXISTS document_aliases (
         id         SERIAL PRIMARY KEY,
@@ -192,6 +223,50 @@ def init_db():
         created_at   TIMESTAMP DEFAULT NOW(),
         expires_at   TIMESTAMP NOT NULL
     );
+
+    -- GĐ1 Mục 6: Chuẩn hóa schema Fact — provenance, version, hiệu lực, kiểm duyệt
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS provenance TEXT;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS fact_version TEXT DEFAULT '1.0';
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS effective_date DATE;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS growth_stage TEXT;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS region TEXT;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'pending';
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS reviewed_by TEXT;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP;
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS trust_tier TEXT DEFAULT 'synthetic';
+    CREATE INDEX IF NOT EXISTS idx_facts_crop ON facts(crop);
+    CREATE INDEX IF NOT EXISTS idx_facts_growth_stage ON facts(growth_stage);
+    CREATE INDEX IF NOT EXISTS idx_facts_verification ON facts(verification_status);
+
+    -- GĐ1 Mục 13: Audit log cho cross-farm authorization events
+    CREATE TABLE IF NOT EXISTS auth_audit_log (
+        log_id      SERIAL PRIMARY KEY,
+        event_type  TEXT NOT NULL,
+        username    TEXT,
+        farm_id     TEXT,
+        tool_name   TEXT,
+        system_version TEXT,
+        router_version TEXT,
+        details     JSONB,
+        created_at  TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_audit_log_event ON auth_audit_log(event_type, created_at);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_username ON auth_audit_log(username);
+
+    -- GĐ3: Fault injection log cho Farm Simulator
+    CREATE TABLE IF NOT EXISTS fault_injection_log (
+        scenario_id  TEXT PRIMARY KEY,
+        farm_id      TEXT,
+        zone_id      TEXT,
+        device_id    TEXT,
+        fault_type   TEXT,
+        start_time   TIMESTAMP,
+        end_time     TIMESTAMP,
+        params       JSONB,
+        description  TEXT,
+        created_at   TIMESTAMP DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_fault_log_farm ON fault_injection_log(farm_id, zone_id);
     """
     try:
         with get_cursor() as cur:

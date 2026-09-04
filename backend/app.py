@@ -23,6 +23,9 @@ from backend.router.query_router import route_question, synthesize_answer
 from backend.layers.layer1_facts import get_fact, get_rice_variety, get_all_rice_varieties
 from backend.layers.layer2_kg import find_suitable_varieties, find_pest_info, find_technique_info
 from backend.layers.layer3_docs import semantic_search, get_chunk_count
+from backend.utils.versioning import get_version_context, version_log_prefix, SYSTEM_VERSION
+from backend.iam.iam import build_farm_context, check_farm_access
+from backend.retrieval.retrieval_plan import execute_retrieval_plan
 from backend.db.postgres import (
     save_chat_message, get_chat_history, get_all_sessions, get_user_sessions, delete_chat_session, save_feedback,
     create_user, get_user_by_username, get_user_by_id, get_all_users, update_user_block_status,
@@ -43,9 +46,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Chatbot Nông Nghiệp AI",
+    title="Chatbot Nông Nghiệp AI — NextFarm v2.2",
     description="Hệ thống Chatbot Nông Nghiệp — Tư vấn đa dạng nông sản & Quản lý tri thức",
-    version="2.0.0",
+    version=SYSTEM_VERSION,
 )
 
 app.add_middleware(
@@ -56,6 +59,14 @@ app.add_middleware(
 )
 
 FRONTEND_DIR = BASE_DIR / "frontend"
+
+# ─── GĐ2: Đăng ký Tool API Router ─────────────────────────────────────────
+try:
+    from backend.tools.tool_router import router as tool_api_router
+    app.include_router(tool_api_router)
+    logger.info("✅ Tool API Router đã đăng ký (/api/tools/*)")
+except Exception as _tool_router_err:
+    logger.warning(f"Tool API Router không khởi tạo được: {_tool_router_err}")
 
 
 @app.on_event("startup")
@@ -96,6 +107,9 @@ class ChatRequest(BaseModel):
     username: Optional[str] = None
     question: str
     conversation_history: Optional[list] = []
+    # GĐƆ2: Farm context cho tool calls
+    farm_id: Optional[str] = None    # farm_id do frontend truyền — KHÔNG để LLM tự sinh
+    zone_id: Optional[str] = None    # zone_id trong farm
 
 
 class FeedbackRequest(BaseModel):
@@ -122,6 +136,11 @@ class ChatResponse(BaseModel):
     layer_used: Optional[str] = None
     clarification_needed: bool = False
     clarification_question: Optional[str] = None
+    # GĐƆ2: Thêm thông tin nguồn và cảnh báo
+    tool_sources: Optional[list] = None          # Danh sách tool đã gọi
+    retrieval_sources: Optional[list] = None     # Danh sách nguồn dữ liệu đã dùng
+    freshness_warnings: Optional[list] = None    # Cảnh báo freshness từ sensor
+    requires_clarification: bool = False         # Fail-closed: cần thêm điều kiện
 
 
 # ─── Auth Endpoints ───────────────────────────────────────────
@@ -818,6 +837,40 @@ async def _check_and_record_qe_match(question: str, answer: str):
         logger.warning(f"Benchmark auto-check lỗi (không ảnh hưởng chat): {e}")
 
 
+def _enqueue_benchmark_check(question: str, answer: str):
+    """
+    GĐ1 Mục 10: Ghi benchmark job vào DB thay vì asyncio.create_task.
+    Durable: không mất task khi worker restart.
+    Background worker định kỳ poll bảng benchmark_jobs và xử lý.
+    Fallback: nếu DB lỗi thì gọi asyncio.create_task như cũ.
+    """
+    import uuid as _uuid
+    from backend.db.postgres import get_cursor
+    from backend.utils.versioning import SYSTEM_VERSION, ROUTER_PROMPT_VERSION
+
+    try:
+        job_id = f"bm_{_uuid.uuid4().hex[:12]}"
+        payload = {
+            "question": question,
+            "answer": answer,
+            "system_version": SYSTEM_VERSION,
+            "router_version": ROUTER_PROMPT_VERSION,
+        }
+        with get_cursor() as cur:
+            cur.execute("""
+                INSERT INTO benchmark_jobs (job_id, status, questions, created_at, updated_at)
+                VALUES (%s, 'pending', %s, NOW(), NOW())
+            """, (job_id, json.dumps(payload, ensure_ascii=False)))
+        logger.debug(f"Benchmark job enqueued: {job_id}")
+
+        # Vẫn chạy async ngay để không trễ (ưu tiên speed hơn durability trong PoC)
+        asyncio.create_task(_check_and_record_qe_match(question, answer))
+
+    except Exception as e:
+        logger.warning(f"_enqueue_benchmark_check DB error, falling back to create_task: {e}")
+        raise  # Để caller dùng fallback
+
+
 async def _get_chatbot_answer(question: str) -> str:
     """Lấy câu trả lời từ chatbot bằng cách gọi thẳng hàm chat() endpoint."""
     try:
@@ -1116,14 +1169,20 @@ async def chat(request: ChatRequest):
     # ─── Bước 2: Router phân loại (truyền conversation_history) ─
     routing = await asyncio.to_thread(route_question, norm_question, history=request.conversation_history)
     question_type = routing.get("question_type", "diễn_giải")
-    crop = routing.get("crop", "nông nghiệp tổng quát")
+    crop = routing.get("crop") or None  # GĐ1 Mục 1: None nếu không xác định
     season = routing.get("season") or extract_season(norm_question)
     soil_type = routing.get("soil_type") or extract_soil_type(norm_question)
     variety = routing.get("variety") or extract_variety_name(norm_question)
+    growth_stage = routing.get("growth_stage")  # GĐ1 Mục 1: thêm mới
     keywords = routing.get("topic_keywords", [])
     confidence = routing.get("confidence", "medium")
-    
-    logger.info(f"Router: type={question_type}, crop={crop}, season={season}, soil={soil_type}")
+
+    # GĐ1 Mục 13: log kèm version
+    ver_prefix = version_log_prefix()
+    logger.info(
+        f"{ver_prefix} Router: type={question_type}, crop={crop}, season={season}, "
+        f"soil={soil_type}, growth_stage={growth_stage}"
+    )
     
     # ─── Bước 3: Ngoài phạm vi ────────────────────────────────
     if question_type == "ngoài_phạm_vi":
@@ -1156,87 +1215,145 @@ async def chat(request: ChatRequest):
             clarification_question=clarification,
         )
     
-    # ─── Bước 5: Định tuyến các tầng ─────────────────────────
+    # ─── Bước 5: Build IAM Farm Context (GĐ2) ───────────────────
+    # farm_id do frontend truyền vào — KHÔNG để LLM tự sinh
+    farm_ctx = build_farm_context(
+        username=request.username or "anonymous",
+        user_id=request.username or "0",
+        role="user",
+        farm_id=request.farm_id,  # None nếu không có farm context
+        zone_id=request.zone_id,
+    )
+
+    # ─── Bước 6: Định tuyến các tầng ─────────────────────────
     answer_data = None
     layer_used = "none"
     is_partial = False
     partial_warning = None
     source_info = ""
-    
-    # — Tầng 1: Số liệu định lượng —
-    if question_type == "định_lượng":
-        layer_used = "Tầng 1 — Structured Fact Store"
-        if variety:
-            variety_data = get_rice_variety(variety)
-            if variety_data:
-                answer_data = f"Thông tin nông sản / giống:\n{json.dumps(variety_data, ensure_ascii=False, indent=2)}"
-                source_info = "doc_001"
-        
+    freshness_warnings: list = []
+    tool_sources: list = []
+    retrieval_sources: list = []
+    requires_clarification_flag = False
+
+    # ─── GĐ2: Thực thi Retrieval Plan Đa Nguồn ───────────────
+    # execute_retrieval_plan thu thập song song từ: Facts + KG + Docs + Tools
+    # Mỗi nguồn có IAM check, freshness flag, fail-closed policy
+    plan_result = None
+    try:
+        plan_result = await execute_retrieval_plan(
+            routing=routing,
+            farm_context=farm_ctx,
+            norm_question=norm_question,
+            keywords=keywords,
+        )
+    except Exception as _rp_err:
+        logger.warning(f"Retrieval plan lỗi (fallback về layer-by-layer): {_rp_err}")
+
+    if plan_result and plan_result.merged_data:
+        # ─── Tổng hợp từ retrieval plan ─────────────────────
+        answer_data = plan_result.merged_data
+        source_info = plan_result.merged_source_info or ""
+        layer_used = "RetrievalPlan — " + ", ".join(plan_result.sources_used) if plan_result.sources_used else "RetrievalPlan"
+        freshness_warnings = plan_result.warnings or []
+        tool_sources = plan_result.tool_calls or []
+        retrieval_sources = list(plan_result.sources_used) if plan_result.sources_used else []
+        requires_clarification_flag = plan_result.requires_clarification
+    else:
+        # ─── Fallback: layer-by-layer (nếu retrieval plan fail hoặc trống) ─
+        # — Tầng 1: Số liệu định lượng —
+        if question_type == "định_lượng":
+            layer_used = "Tầng 1 — Structured Fact Store"
+            if variety:
+                variety_data = get_rice_variety(variety)
+                if variety_data:
+                    answer_data = f"Thông tin nông sản / giống:\n{json.dumps(variety_data, ensure_ascii=False, indent=2)}"
+                    source_info = "doc_001"
+
+            if not answer_data:
+                keyword = " ".join(keywords) if keywords else norm_question[:50]
+                fact_result = get_fact(
+                    attribute=keyword,
+                    crop=crop,
+                    season=season,
+                    soil_type=soil_type,
+                    growth_stage=growth_stage,
+                )
+                if fact_result["found"]:
+                    is_partial = fact_result["is_partial_match"]
+                    partial_warning = fact_result.get("warning")
+                    facts_text = "\n".join([
+                        f"- {r['attribute']}: {r['value']} {r.get('unit', '')} "
+                        f"({r.get('condition_note', '')})"
+                        for r in fact_result["results"]
+                    ])
+                    answer_data = f"Số liệu cơ sở dữ liệu:\n{facts_text}"
+                    source_info = fact_result["results"][0].get("source_document_id", "Kho tri thức")
+                elif fact_result.get("requires_clarification"):
+                    partial_warning = fact_result.get("warning")
+                    is_partial = False
+                    requires_clarification_flag = True
+
+        # — Tầng 2: Quan hệ / Phù hợp —
+        elif question_type == "phù_hợp/quan_hệ":
+            layer_used = "Tầng 2 — Knowledge Graph"
+            keyword_str = " ".join(keywords)
+            if keywords:
+                pest_result = find_pest_info(pest_name=keyword_str)
+                if pest_result["found"]:
+                    answer_data = f"Thông tin sâu bệnh:\n{json.dumps(pest_result['results'], ensure_ascii=False, indent=2)}"
+                    source_info = pest_result["source_info"]
+            if not answer_data and keywords:
+                tech_result = find_technique_info(technique_name=keyword_str)
+                if tech_result["found"]:
+                    answer_data = f"Thông tin kỹ thuật:\n{json.dumps(tech_result['results'], ensure_ascii=False, indent=2)}"
+                    source_info = tech_result["source_info"]
+            if not answer_data and (soil_type or season):
+                kg_result = find_suitable_varieties(soil_type=soil_type, season=season)
+                if kg_result["found"]:
+                    answer_data = f"Kết quả Knowledge Graph:\n{json.dumps(kg_result['results'], ensure_ascii=False, indent=2)}"
+                    source_info = kg_result["source_info"]
+
+        # — Tầng 3: Document Store (RAG ChromaDB) —
         if not answer_data:
-            keyword = " ".join(keywords) if keywords else norm_question[:50]
-            fact_result = get_fact(
-                attribute=keyword,
+            layer_used = "Tầng 3 — Document Store"
+            search_query = " ".join(keywords) if keywords else norm_question
+            doc_result = await asyncio.to_thread(
+                semantic_search,
+                query=search_query,
                 crop=crop,
                 season=season,
-                soil_type=soil_type
+                top_k=4,
             )
-            
-            if fact_result["found"]:
-                is_partial = fact_result["is_partial_match"]
-                partial_warning = fact_result.get("warning")
-                facts_text = "\n".join([
-                    f"- {r['attribute']}: {r['value']} {r.get('unit', '')} "
-                    f"({r.get('condition_note', '')})"
-                    for r in fact_result["results"]
+            if doc_result["found"]:
+                chunks_text = "\n\n---\n\n".join([
+                    f"[Nguồn tệp: {c.get('source', 'Tài liệu')} | Chủ đề: {c.get('topic', 'Nông nghiệp')}"
+                    + (f" | Mục: {c.get('heading_path')}" if c.get("heading_path") else "") + f"]\n{c['chunk_text']}"
+                    for c in doc_result["chunks"]
                 ])
-                answer_data = f"Số liệu cơ sở dữ liệu:\n{facts_text}"
-                source_info = fact_result["results"][0].get("source_document_id", "Kho tri thức")
-    
-    # — Tầng 2: Quan hệ / Phù hợp —
-    elif question_type == "phù_hợp/quan_hệ":
-        layer_used = "Tầng 2 — Knowledge Graph"
-        keyword_str = " ".join(keywords)
+                answer_data = f"Nội dung tổng hợp từ các tài liệu nông nghiệp trong hệ thống:\n{chunks_text}"
+                source_info = doc_result["source_info"]
 
-        if keywords:
-            pest_result = find_pest_info(pest_name=keyword_str)
-            if pest_result["found"]:
-                answer_data = f"Thông tin sâu bệnh:\n{json.dumps(pest_result['results'], ensure_ascii=False, indent=2)}"
-                source_info = pest_result["source_info"]
-
-        if not answer_data and keywords:
-            tech_result = find_technique_info(technique_name=keyword_str)
-            if tech_result["found"]:
-                answer_data = f"Thông tin kỹ thuật:\n{json.dumps(tech_result['results'], ensure_ascii=False, indent=2)}"
-                source_info = tech_result["source_info"]
-
-        if not answer_data and (soil_type or season):
-            kg_result = find_suitable_varieties(soil_type=soil_type, season=season)
-            if kg_result["found"]:
-                answer_data = f"Kết quả Knowledge Graph:\n{json.dumps(kg_result['results'], ensure_ascii=False, indent=2)}"
-                source_info = kg_result["source_info"]
-    
-    # — Tầng 3: Document Store (RAG ChromaDB) —
-    if not answer_data:
-        layer_used = "Tầng 3 — Document Store"
-        search_query = " ".join(keywords) if keywords else norm_question
-        
-        doc_result = await asyncio.to_thread(
-            semantic_search,
-            query=search_query,
-            crop=crop,
-            season=season,
-            top_k=4,
+    # ─── Bước 7: Kiểm tra dữ liệu ───────────────────────────
+    if requires_clarification_flag and not answer_data:
+        clarification_ans = (
+            partial_warning or
+            "Câu hỏi của bạn liên quan đến dữ liệu nhạy cảm (liều lượng, tưới tiêu...). "
+            "Vui lòng cung cấp thêm: mùa vụ, loại đất, và giai đoạn sinh trưởng để tôi tư vấn chính xác."
         )
-        
-        if doc_result["found"]:
-            chunks_text = "\n\n---\n\n".join([
-                f"[Nguồn tệp: {c.get('source', 'Tài liệu')} | Chủ đề: {c.get('topic', 'Nông nghiệp')}]\n{c['chunk_text']}"
-                for c in doc_result["chunks"]
-            ])
-            answer_data = f"Nội dung tổng hợp từ các tài liệu nông nghiệp trong hệ thống:\n{chunks_text}"
-            source_info = doc_result["source_info"]
-    
-    # ─── Bước 6: Kiểm tra dữ liệu ───────────────────────────
+        save_chat_message(session_id, "bot", clarification_ans,
+                          {"layer": layer_used, "type": question_type, "fail_closed": True},
+                          username=request.username)
+        return ChatResponse(
+            session_id=session_id,
+            answer=clarification_ans,
+            question_type=question_type,
+            layer_used=layer_used,
+            clarification_needed=True,
+            requires_clarification=True,
+            freshness_warnings=freshness_warnings or None,
+        )
+
     if not answer_data:
         fallback_ans = (
             "Tôi chưa tìm thấy thông tin phù hợp trong kho dữ liệu nông nghiệp hiện tại. "
@@ -1249,26 +1366,39 @@ async def chat(request: ChatRequest):
             answer=fallback_ans,
             question_type=question_type,
             layer_used=layer_used,
+            freshness_warnings=freshness_warnings or None,
         )
-    
-    # ─── Bước 7: Tổng hợp câu trả lời ─────────────────────────
+
+    # ─── Bước 8: Tổng hợp câu trả lời ─────────────────────────
+    # Thêm freshness warning vào context tổng hợp
+    freshness_note = ""
+    if freshness_warnings:
+        freshness_note = "\n\n⚠️ Lưu ý dữ liệu: " + " | ".join(freshness_warnings)
+
     final_answer = await asyncio.to_thread(
         synthesize_answer,
         question=question,
-        data=answer_data,
+        data=answer_data + freshness_note,
         source=f"Nguồn: {source_info} | Kho tri thức Nông nghiệp"
     )
-    
+
     save_chat_message(session_id, "bot", final_answer, {
         "layer": layer_used,
         "type": question_type,
         "source": source_info,
-        "is_partial": is_partial
+        "is_partial": is_partial,
+        "system_version": SYSTEM_VERSION,   # GĐ1 Mục 13: versioning
+        "farm_id": request.farm_id,         # GĐ2: audit farm context
+        "freshness_warnings": freshness_warnings,
     }, username=request.username)
-    
+
     # ─── Ghi nhận ngầm nếu câu hỏi trùng với Q&E.txt ───
-    asyncio.create_task(_check_and_record_qe_match(question, final_answer))
-    
+    try:
+        _enqueue_benchmark_check(question, final_answer)
+    except Exception as _be:
+        logger.warning(f"Benchmark enqueue lỗi (không ảnh hưởng chat): {_be}")
+        asyncio.create_task(_check_and_record_qe_match(question, final_answer))
+
     return ChatResponse(
         session_id=session_id,
         answer=final_answer,
@@ -1277,6 +1407,11 @@ async def chat(request: ChatRequest):
         partial_match_warning=partial_warning,
         question_type=question_type,
         layer_used=layer_used,
+        # GĐ2: thêm fields mới
+        tool_sources=tool_sources or None,
+        retrieval_sources=retrieval_sources or None,
+        freshness_warnings=freshness_warnings or None,
+        requires_clarification=requires_clarification_flag,
     )
 
 

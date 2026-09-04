@@ -2,7 +2,7 @@
 LLM Router — phân loại câu hỏi và trích xuất thực thể.
 
 Dùng Gemini để:
-1. Trích xuất: crop, season, soil_type, question_type
+1. Trích xuất: crop, season, soil_type, growth_stage, question_type
 2. Quyết định tầng nào xử lý
 3. Hỏi lại nếu câu hỏi quá mơ hồ
 
@@ -13,6 +13,10 @@ question_type ∈ {
     "ngoài_phạm_vi"    → Từ chối (cây trồng khác, giá cả, tín dụng...)
     "cần_làm_rõ"       → Hỏi lại (quá mơ hồ)
 }
+
+CHANGELOG:
+    v1.1.0 (GĐ1 Mục 1): Bỏ crop='lúa' mặc định trong fallback. Thêm growth_stage.
+            Khi router không xác định crop → None (không suy diễn).
 """
 import json
 import logging
@@ -42,12 +46,18 @@ Phân loại:
 - "ngoài_phạm_vi": hoàn toàn không liên quan đến ngành nông nghiệp (bất động sản, du lịch, giải trí...)
 - "cần_làm_rõ": quá mơ hồ, không đủ thông tin để tra cứu
 
+QUY TẮC TRÍCH XUẤT crop:
+- Chỉ điền khi chắc chắn nhận dạng được từ câu hỏi hoặc lịch sử hội thoại
+- Nếu không rõ hoặc câu hỏi mơ hồ → trả về null (TUYỆT ĐỐI không suy đoán)
+- Dùng 'nông nghiệp tổng quát' khi câu hỏi áp dụng cho nhiều cây trồng
+
 Trả về JSON (CHỈ JSON, không thêm markdown hay text khác):
 {{
   "question_type": "<phân loại>",
-  "crop": "<tên cây trồng/nông sản hoặc 'nông nghiệp tổng quát'>",
+  "crop": "<tên cây trồng/nông sản, 'nông nghiệp tổng quát', hoặc null nếu không xác định>",
   "season": "<Đông Xuân | Hè Thu | Mùa | null>",
   "soil_type": "<phù sa | phèn nhẹ | phèn trung bình | phèn nặng | mặn | đất đỏ | null>",
+  "growth_stage": "<mạ | đẻ_nhánh | làm_đòng | trổ_bông | chín | null — giai đoạn sinh trưởng nếu câu hỏi định lượng>",
   "variety": "<tên giống nếu có, hoặc null>",
   "topic_keywords": ["<từ khóa chính của câu hỏi>"],
   "confidence": "<high | medium | low>",
@@ -82,9 +92,10 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
     Returns:
         {
             "question_type": str,
-            "crop": str,
+            "crop": str | None,       # None nếu không xác định — KHÔNG mặc định 'lúa'
             "season": str | None,
             "soil_type": str | None,
+            "growth_stage": str | None,   # GĐ1 Mục 1: thêm mới
             "variety": str | None,
             "topic_keywords": list,
             "confidence": str,
@@ -128,15 +139,26 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
 
         result = json.loads(text)
         result["error"] = None
+
+        # GĐ1 Mục 1: Đảm bảo growth_stage luôn có trong kết quả (backward compat)
+        if "growth_stage" not in result:
+            result["growth_stage"] = None
+
+        # GĐ1 Mục 1: crop=None hoặc chuỗi rỗng → soft retrieval, không lock crop
+        if not result.get("crop") or result["crop"].strip() == "":
+            result["crop"] = None
+
         return result
 
     except AllKeysExhaustedError as e:
+        # GĐ1 Mục 1: crop=None thay vì 'lúa' — không suy đoán khi API lỗi
         logger.error(f"Router AllKeysExhausted: {e}")
         return {
             "question_type": "diễn_giải",
-            "crop": "lúa",
+            "crop": None,            # KHÔNG mặc định 'lúa'
             "season": None,
             "soil_type": None,
+            "growth_stage": None,
             "variety": None,
             "topic_keywords": [question[:50]],
             "confidence": "low",
@@ -144,12 +166,14 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
             "error": f"Tất cả Gemini API keys đều không khả dụng: {e}"
         }
     except json.JSONDecodeError as e:
+        # GĐ1 Mục 1: crop=None thay vì 'lúa' — không suy đoán khi parse lỗi
         logger.error(f"Router JSON parse error: {e}")
         return {
             "question_type": "diễn_giải",
-            "crop": "lúa",
+            "crop": None,            # KHÔNG mặc định 'lúa'
             "season": None,
             "soil_type": None,
+            "growth_stage": None,
             "variety": None,
             "topic_keywords": [question[:50]],
             "confidence": "low",
@@ -157,12 +181,14 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
             "error": f"Parse error: {e}"
         }
     except Exception as e:
+        # GĐ1 Mục 1: crop=None thay vì 'lúa' — không suy đoán khi lỗi bất kỳ
         logger.error(f"Router error: {e}")
         return {
             "question_type": "diễn_giải",
-            "crop": "lúa",
+            "crop": None,            # KHÔNG mặc định 'lúa'
             "season": None,
             "soil_type": None,
+            "growth_stage": None,
             "variety": None,
             "topic_keywords": [],
             "confidence": "low",

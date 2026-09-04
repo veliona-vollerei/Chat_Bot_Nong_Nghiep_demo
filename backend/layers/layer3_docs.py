@@ -35,6 +35,10 @@ def embed_query(text: str) -> list:
     ).tolist()
 
 
+# Alias cho threshold_calibration module
+_get_embedding_model = get_embedder
+
+
 def embed_passage(text: str) -> list:
     """Embedding cho đoạn văn (prefix 'passage:')."""
     return get_embedder().encode(
@@ -59,10 +63,9 @@ def semantic_search(
     if col.count() == 0:
         return {"found": False, "chunks": [], "source_info": "Kho tài liệu trống. Hãy chạy scripts/ingest_chunks.py trước."}
 
-    # Các loại cây trồng cụ thể được filter chính xác
+    # GĐ1 Mục 1: crop=None → không filter, tìm trên toàn corpus
     EXACT_FILTER_CROPS = {"lúa", "vải", "nhãn", "cam", "bưởi", "xoài", "chuối", "dứa", "na", "chanh leo", "mận", "cà phê"}
-    # Nếu là cây ăn quả chung (hoặc tên không rõ) → không filter để tìm rộng hơn
-    use_crop_filter = crop.lower() in EXACT_FILTER_CROPS
+    use_crop_filter = crop is not None and crop.lower() in EXACT_FILTER_CROPS
 
     query_embedding = embed_query(query)
 
@@ -132,6 +135,10 @@ def semantic_search(
             "confidence": meta.get("confidence", "chính thống"),
             "year_published": meta.get("year_published"),
             "similarity": round(similarity, 4),
+            # GĐ1 Mục 8: metadata cấu trúc cho context-aware retrieval
+            "heading_path": meta.get("heading_path", ""),
+            "chunk_type": meta.get("chunk_type", "paragraph"),
+            "source_section": meta.get("source_section", ""),
         })
 
         if len(chunks) >= top_k:
@@ -163,13 +170,17 @@ def store_chunk(chunk: dict) -> bool:
     embedding = embed_passage(chunk["chunk_text"])
 
     metadata = {
-        "crop":              chunk.get("crop", "lúa"),
+        "crop":              chunk.get("crop", "nông nghiệp tổng quát"),
         "season":            chunk.get("season") or "",
         "topic":             chunk.get("topic") or "",
         "source":            chunk.get("source", "doc_001"),
         "source_document_id": chunk.get("source_document_id", "doc_001"),
         "confidence":        chunk.get("confidence", "chính thống"),
         "year_published":    chunk.get("year_published", 2024),
+        # GĐ1 Mục 8: metadata cấu trúc
+        "heading_path":      chunk.get("heading_path") or "",
+        "chunk_type":        chunk.get("chunk_type") or "paragraph",
+        "source_section":    chunk.get("source_section") or "",
     }
     # ChromaDB không chấp nhận None trong metadata
     metadata = {k: v for k, v in metadata.items() if v is not None}

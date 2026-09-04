@@ -3,6 +3,11 @@ Data Pipeline — Xử lý tài liệu thô nông nghiệp (PDF, DOCX, PPTX, XLS
 Sử dụng marker-master để đọc tài liệu. Chỉ lấy chữ kỹ thuật số có sẵn trong file.
 OCR đã tắt (disable_ocr=True) — không khởi động inference server, không xử lý ảnh scan.
 Trang scan/ảnh thuần túy sẽ bị bỏ qua tự động mà không cần OCR.
+
+CHANGELOG:
+    GĐ1 Mục 8: Dùng StructureAwareChunker thay chunk_text() cũ cho thiết lập markdown (từ marker).
+              Chúnh heading_path, chunk_type vào metadata ChromaDB.
+    GĐ1 Mục 9: Thêm mini OCR coverage check sau extract.
 """
 import os
 import sys
@@ -14,6 +19,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from backend.config import BASE_DIR
 from backend.layers.layer3_docs import store_chunk
+from backend.ingestion.chunker import chunk_markdown, StructuredChunk
 from backend.db.postgres import (
     get_cursor,
     query_document_by_hash,
@@ -295,7 +301,22 @@ def process_and_ingest_document(
         raise ValueError(f"Định dạng file không được hỗ trợ: {ext}")
 
     if not chunks_list and raw_text:
-        chunks_list = chunk_text(raw_text)
+        if ext in MARKER_SUPPORTED_EXTENSIONS:
+            # GĐ1 Mục 8: Dùng Structure-Aware Chunker cho văn bản markdown từ marker
+            structured = chunk_markdown(raw_text)
+            chunks_list = structured  # List[StructuredChunk]
+
+            # Mini OCR coverage check (Mục 9)
+            _n_good = sum(1 for c in structured if c.char_count >= 80)
+            _coverage = (_n_good / len(structured) * 100) if structured else 0
+            if _coverage < 60:
+                logger.warning(
+                    f"⚠️ OCR coverage thấp: {_coverage:.0f}% chunks đạt chuẩn ({_n_good}/{len(structured)}). "
+                    f"Tài liệu '{title}' có thể cần OCR hoặc upload lại bản kỹ thuật số."
+                )
+        else:
+            # Fallback đơn giản cho .txt / .md
+            chunks_list = chunk_text(raw_text)
 
     if not chunks_list:
         return {"status": "error", "message": "Không trích xuất được văn bản từ tài liệu."}
@@ -314,7 +335,19 @@ def process_and_ingest_document(
 
     # Nạp từng chunk vào ChromaDB
     stored_count = 0
-    for i, c_text in enumerate(chunks_list):
+    for i, c_item in enumerate(chunks_list):
+        # GĐ1 Mục 8: hỗ trợ cả StructuredChunk lẫn str (fallback)
+        if isinstance(c_item, StructuredChunk):
+            c_text = c_item.chunk_text
+            heading_path = c_item.heading_path
+            chunk_type = c_item.chunk_type
+            source_section = c_item.source_section
+        else:
+            c_text = c_item
+            heading_path = ""
+            chunk_type = "paragraph"
+            source_section = ""
+
         if not c_text.strip():
             continue
 
@@ -328,6 +361,10 @@ def process_and_ingest_document(
             "source_document_id": doc_id,
             "confidence": "chính thống",
             "year_published": 2026,
+            # GĐ1 Mục 8: metadata cấu trúc — phục vụ context-aware retrieval
+            "heading_path": heading_path,
+            "chunk_type": chunk_type,
+            "source_section": source_section,
         }
 
         if store_chunk(chunk_obj):
