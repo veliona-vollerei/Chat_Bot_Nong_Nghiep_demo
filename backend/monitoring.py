@@ -104,6 +104,100 @@ def _compute_p95(latencies: list) -> float:
     return round(s[min(idx, len(s) - 1)], 1)
 
 
+# ─── Ngưỡng cảnh báo tự động ─────────────────────────────────────────────────
+ALERT_THRESHOLDS = {
+    "hallucination_rate_pct": 5.0,      # Cảnh báo nếu missing_rate > 5%
+    "tool_failure_rate_pct": 10.0,      # Cảnh báo nếu tool lỗi > 10%
+    "iam_deny_rate_min_pct": 0.0,       # Cảnh báo nếu có bất kỳ IAM leak (allow cross-farm)
+    "calibration_f1_min": 0.80,         # Cảnh báo nếu F1 tối ưu < 0.80
+    "acceptance_mode_required": "full_flow",  # Cảnh báo nếu file nghiệm thu dùng schema_check_only
+}
+
+
+def _compute_alerts(
+    sensor_stats: dict,
+    tool_stats: dict,
+    iam_stats: dict,
+    calibration_stats: Optional[dict],
+    acceptance_stats: Optional[dict],
+) -> List[dict]:
+    """
+    Tính danh sách cảnh báo tự động dựa trên ngưỡng ALERT_THRESHOLDS.
+    Trả về list[{"level": "WARNING"|"CRITICAL", "code": str, "message": str}].
+    """
+    alerts: List[dict] = []
+
+    # 1. Sensor missing rate
+    missing_rate = sensor_stats.get("missing_rate_pct", 0.0)
+    if missing_rate > ALERT_THRESHOLDS["hallucination_rate_pct"]:
+        alerts.append({
+            "level": "WARNING",
+            "code": "HIGH_MISSING_SENSOR_RATE",
+            "message": (
+                f"Tỷ lệ cảm biến mất dữ liệu cao: {missing_rate:.1f}% "
+                f"(ngưỡng: {ALERT_THRESHOLDS['hallucination_rate_pct']}%)"
+            ),
+        })
+
+    # 2. Tool failure rate
+    for tool_name, tm in tool_stats.items():
+        fail_rate = tm.get("failure_rate_pct", 0.0)
+        if fail_rate > ALERT_THRESHOLDS["tool_failure_rate_pct"]:
+            alerts.append({
+                "level": "WARNING",
+                "code": f"HIGH_TOOL_FAILURE_{tool_name.upper()}",
+                "message": (
+                    f"Tool '{tool_name}' có tỷ lệ lỗi cao: {fail_rate:.1f}% "
+                    f"(ngưỡng: {ALERT_THRESHOLDS['tool_failure_rate_pct']}%)"
+                ),
+            })
+
+    # 3. IAM cross-farm leak (allow khi không nên allow)
+    # Phát hiện bằng cách kiểm tra deny_rate gần 0% khi có nhiều check
+    total_iam = iam_stats.get("total_checks", 0)
+    deny_count = iam_stats.get("deny_count", 0)
+    if total_iam > 10 and deny_count == 0:
+        # Nếu có >= 10 check mà không một lần nào deny — có thể IAM đang bị bypass
+        alerts.append({
+            "level": "WARNING",
+            "code": "IAM_NO_DENY_DETECTED",
+            "message": (
+                f"IAM đã xử lý {total_iam} check nhưng không có lần deny nào — "
+                "kiểm tra lại cấu hình phân quyền cross-farm."
+            ),
+        })
+
+    # 4. Calibration F1 dưới ngưỡng
+    if calibration_stats:
+        f1 = calibration_stats.get("optimal_f1")
+        if f1 is not None and f1 < ALERT_THRESHOLDS["calibration_f1_min"]:
+            alerts.append({
+                "level": "WARNING",
+                "code": "LOW_CALIBRATION_F1",
+                "message": (
+                    f"F1 hiệu chuẩn RAG thấp: {f1:.3f} "
+                    f"(ngưỡng tối thiểu: {ALERT_THRESHOLDS['calibration_f1_min']}). "
+                    "Cần chạy lại threshold_calibration.py."
+                ),
+            })
+
+    # 5. Acceptance results chưa phải full_flow
+    if acceptance_stats:
+        mode = acceptance_stats.get("evaluation_mode", "")
+        if mode != ALERT_THRESHOLDS["acceptance_mode_required"]:
+            alerts.append({
+                "level": "CRITICAL",
+                "code": "ACCEPTANCE_NOT_FULL_FLOW",
+                "message": (
+                    f"File nghiệm thu đang ở chế độ '{mode}' — "
+                    "KHÔNG phải kết quả nghiệm thu thật (full_flow). "
+                    "Chạy lại: python -m backend.simulator.benchmark_evaluator"
+                ),
+            })
+
+    return alerts
+
+
 def _load_json_safe(path: Path) -> Optional[dict]:
     try:
         if path.exists():
@@ -194,8 +288,19 @@ def get_monitoring_stats() -> dict:
                 "avg_answer_correctness": round(sum(scores) / len(scores), 1) if scores else 0.0,
             }
 
+    # ── Alerts tự động ───────────────────────────────────────────────────────
+    alerts = _compute_alerts(
+        sensor_stats=sensor_stats,
+        tool_stats=tool_stats,
+        iam_stats=iam_stats,
+        calibration_stats=calibration_stats,
+        acceptance_stats=acceptance_stats,
+    )
+
     return {
         "generated_at": datetime.now().isoformat(),
+        "alerts": alerts,
+        "alert_count": len(alerts),
         "tool_metrics": tool_stats,
         "iam_stats": iam_stats,
         "sensor_quality": sensor_stats,

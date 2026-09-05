@@ -13,7 +13,7 @@ Hệ thống NextFarm Chatbot đã nâng cấp từ kiến trúc 3 tầng (Fact 
 | **GĐ1 — Chốt Nền Tảng** | Router fallback `crop=None`, IAM authorization, Retrieval plan đa nguồn, Fail-closed numeric lock, Freshness flags, Schema migration Fact, OCR report, Versioning | ✅ Đạt | 52 unit tests pass, `backend/iam/iam.py`, `backend/versioning.py` |
 | **GĐ2 — Dữ Liệu Vườn IoT** | NextFarm Tool Adapter, REST Tool Router API, kiểm tra IAM trước mọi tool call, xử lý stale/missing | ✅ Đạt | `backend/tools/nextfarm_tools.py`, API `/api/tools/*`, audit log không thể xóa |
 | **GĐ3 — Data & Simulator** | Farm Generator (35 farms, 145 zones khắp VN), Open-Meteo Client, Water Balance (FAO-56), Fault Injector (deterministic), Benchmark Builder (260 câu hỏi) | ✅ Đạt | `backend/simulator/*`, `data/benchmark_questions.json` (seed cố định) |
-| **GĐ4 — RAG Hardening** | Threshold similarity calibration, Durable benchmark queue (`benchmark_jobs`), Key rotation & rate limit pool, Citation validation & RAG audit | ✅ Đạt | `calibration_results.json`, `docs/rag_audit_report.json`, `backend/security/key_pool.py` |
+| **GĐ4 — RAG Hardening** | Threshold similarity calibration, Durable benchmark queue (`benchmark_jobs`), Key rotation & rate limit pool, Citation validation & RAG audit | ✅ Đạt | `calibration_results.json`, `docs/rag_audit_report.json`, `backend/utils/gemini_client.py` (key rotation pool — `backend/security/key_pool.py` đã được hợp nhất vào đây) |
 | **GĐ5 — Nghiệm Thu & Giám Sát** | Benchmark suite tự động 260 câu (`benchmark_evaluator.py`), Dashboard Giám Sát, Báo cáo nghiệm thu minh bạch | ✅ Đạt | `backend/monitoring.py`, `/api/monitoring/stats`, `frontend/admin.html` |
 
 ---
@@ -127,3 +127,11 @@ Nhằm đáp ứng yêu cầu vận hành theo thời gian thực (Mục 15 củ
    - Cơ chế xoay vòng Key hiện hoạt động in-memory. Khi mở rộng mô hình nhiều worker (Multi-worker/Gunicorn/Kubernetes), khuyến nghị đồng bộ trạng thái quota qua Redis hoặc Secret Manager.
 3. **Định Kỳ Hiệu Chuẩn Nông Học**:
    - Khi cập nhật thêm tài liệu giống cây trồng mới vào kho dữ liệu Vector ChromaDB, cần tái thực thi script `backend/retrieval/threshold_calibration.py` để duy trì F1-score tối ưu $\ge 0.8$.
+4. **Dọn Dẹp Backup Cũ (`chroma_db_backup_GD1`)**:
+   - Thư mục `chroma_db_backup_GD1` đã được **xóa có chủ đích** trong commit dọn dẹp sau GĐ4. Đây không phải mất dữ liệu ngoài ý muốn — dữ liệu vector ChromaDB đang hoạt động được lưu tại `chroma_db/` (hiện hành). Backup GĐ1 đã lỗi thời vì schema đã thay đổi qua nhiều giai đoạn.
+
+---
+
+## 7. Ghi Chú Kỹ Thuật (Errata)
+
+> **Sửa lỗi trích dẫn (cập nhật lần 2):** Phiên bản trước của báo cáo này trích dẫn minh chứng GĐ4 là `backend/security/key_pool.py` — đường dẫn này **không tồn tại** trong repo. Code key rotation & rate limit pool thật nằm tại `backend/utils/gemini_client.py` (hàm `call_with_rotation`, class `_KeyPool`). Đã sửa trong bảng GĐ1→GĐ5 ở trên.

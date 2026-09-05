@@ -1,13 +1,13 @@
 {
   "current_threshold": 0.6,
   "optimal_threshold": 0.3,
-  "optimal_f1": 0.828,
-  "recommendation": "Đề xuất giảm threshold từ 0.6 → 0.3 (F1 optimal: 0.828). Cập nhật SIMILARITY_THRESHOLD trong backend/config.py",
+  "optimal_f1": 0.793,
+  "recommendation": "Đề xuất giảm threshold từ 0.6 → 0.3 (F1 optimal: 0.793). Cập nhật SIMILARITY_THRESHOLD trong backend/config.py",
   "per_threshold": {
     "0.3": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -17,7 +17,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1046.3
+          "latency_ms": 1608.8
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -27,7 +27,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 2.0
+          "latency_ms": 15.6
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -37,208 +37,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
-          "query": "quy trình canh tác cà phê robusta",
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
           "category": "diễn_giải",
           "n_results": 5,
           "n_relevant": 5,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 4.0
+          "latency_ms": 0.0
         },
         {
-          "query": "kỹ thuật bón phân cho dưa hấu",
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
           "category": "định_lượng",
           "n_results": 5,
           "n_relevant": 1,
           "precision": 0.2,
-          "recall": 0.333,
-          "f1": 0.25,
-          "latency_ms": 2.5
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
         },
         {
-          "query": "hướng dẫn đầu tư chứng khoán",
-          "category": "negative",
-          "n_results": 5,
-          "n_relevant": 0,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "latency_ms": 2.5
-        }
-      ]
-    },
-    "0.4": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
-      "queries": [
-        {
-          "query": "lượng phân đạm cho lúa đông xuân",
-          "category": "định_lượng",
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
           "n_results": 5,
           "n_relevant": 5,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 2.0
+          "latency_ms": 0.0
         },
         {
-          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
           "category": "phù_hợp/quan_hệ",
           "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 2.0
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 15.6
         },
         {
-          "query": "cách xử lý rầy nâu hại lúa",
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
           "category": "diễn_giải",
           "n_results": 5,
-          "n_relevant": 4,
-          "precision": 0.8,
+          "n_relevant": 3,
+          "precision": 0.6,
           "recall": 1.0,
-          "f1": 0.889,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "quy trình canh tác cà phê robusta",
-          "category": "diễn_giải",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "kỹ thuật bón phân cho dưa hấu",
-          "category": "định_lượng",
-          "n_results": 5,
-          "n_relevant": 1,
-          "precision": 0.2,
-          "recall": 0.333,
-          "f1": 0.25,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "hướng dẫn đầu tư chứng khoán",
-          "category": "negative",
-          "n_results": 5,
-          "n_relevant": 0,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "latency_ms": 1.0
-        }
-      ]
-    },
-    "0.5": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
-      "queries": [
-        {
-          "query": "lượng phân đạm cho lúa đông xuân",
-          "category": "định_lượng",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
-          "category": "phù_hợp/quan_hệ",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "cách xử lý rầy nâu hại lúa",
-          "category": "diễn_giải",
-          "n_results": 5,
-          "n_relevant": 4,
-          "precision": 0.8,
-          "recall": 1.0,
-          "f1": 0.889,
-          "latency_ms": 2.0
-        },
-        {
-          "query": "quy trình canh tác cà phê robusta",
-          "category": "diễn_giải",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "kỹ thuật bón phân cho dưa hấu",
-          "category": "định_lượng",
-          "n_results": 5,
-          "n_relevant": 1,
-          "precision": 0.2,
-          "recall": 0.333,
-          "f1": 0.25,
-          "latency_ms": 2.0
-        },
-        {
-          "query": "hướng dẫn đầu tư chứng khoán",
-          "category": "negative",
-          "n_results": 5,
-          "n_relevant": 0,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0,
-          "latency_ms": 2.0
-        }
-      ]
-    },
-    "0.55": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
-      "queries": [
-        {
-          "query": "lượng phân đạm cho lúa đông xuân",
-          "category": "định_lượng",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
-          "category": "phù_hợp/quan_hệ",
-          "n_results": 5,
-          "n_relevant": 5,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0,
-          "latency_ms": 1.0
-        },
-        {
-          "query": "cách xử lý rầy nâu hại lúa",
-          "category": "diễn_giải",
-          "n_results": 5,
-          "n_relevant": 4,
-          "precision": 0.8,
-          "recall": 1.0,
-          "f1": 0.889,
-          "latency_ms": 1.0
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -251,6 +150,36 @@
           "latency_ms": 0.0
         },
         {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
           "query": "kỹ thuật bón phân cho dưa hấu",
           "category": "định_lượng",
           "n_results": 5,
@@ -258,7 +187,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -268,14 +287,995 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 15.6
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        }
+      ]
+    },
+    "0.4": {
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.9
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        }
+      ]
+    },
+    "0.5": {
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        }
+      ]
+    },
+    "0.55": {
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.6": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -285,7 +1285,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.5
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -295,7 +1295,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -305,7 +1305,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -315,7 +1415,37 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 7.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -325,7 +1455,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 1.0
+          "latency_ms": 0.6
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.1
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.5
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -335,14 +1555,44 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.65": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -352,7 +1602,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -362,7 +1612,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 2.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -372,7 +1622,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.2
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -382,7 +1732,37 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -392,7 +1772,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 15.6
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -402,14 +1872,44 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.7": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -419,7 +1919,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -429,7 +1929,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -439,7 +1939,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -449,7 +2049,37 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 15.6
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -459,7 +2089,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 2.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -469,14 +2189,44 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.75": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -486,7 +2236,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -496,7 +2246,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 15.6
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -506,7 +2256,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -516,7 +2366,37 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -526,7 +2406,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -536,14 +2506,44 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 2.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.8": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.867,
-      "avg_f1": 0.828,
+      "avg_precision": 0.756,
+      "avg_recall": 0.844,
+      "avg_f1": 0.793,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -553,7 +2553,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -563,7 +2563,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -573,7 +2573,107 @@
           "precision": 0.8,
           "recall": 1.0,
           "f1": 0.889,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -583,7 +2683,37 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -593,7 +2723,97 @@
           "precision": 0.2,
           "recall": 0.333,
           "f1": 0.25,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 2,
+          "precision": 0.4,
+          "recall": 0.667,
+          "f1": 0.5,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 3,
+          "precision": 0.6,
+          "recall": 0.75,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.25,
+          "f1": 0.222,
+          "latency_ms": 15.6
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -603,14 +2823,44 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 1,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
     "0.85": {
-      "avg_precision": 0.8,
-      "avg_recall": 0.547,
-      "avg_f1": 0.614,
+      "avg_precision": 0.642,
+      "avg_recall": 0.373,
+      "avg_f1": 0.435,
       "queries": [
         {
           "query": "lượng phân đạm cho lúa đông xuân",
@@ -620,7 +2870,7 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -630,7 +2880,7 @@
           "precision": 1.0,
           "recall": 0.4,
           "f1": 0.571,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -640,7 +2890,107 @@
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.2,
+          "f1": 0.333,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
+          "category": "diễn_giải",
+          "n_results": 4,
+          "n_relevant": 4,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 2,
+          "n_relevant": 2,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 2,
+          "n_relevant": 2,
+          "precision": 1.0,
+          "recall": 0.5,
+          "f1": 0.667,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 1,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.2,
+          "f1": 0.333,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         },
         {
           "query": "quy trình canh tác cà phê robusta",
@@ -650,7 +3000,37 @@
           "precision": 1.0,
           "recall": 0.333,
           "f1": 0.5,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.6
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 3,
+          "n_relevant": 2,
+          "precision": 0.667,
+          "recall": 0.5,
+          "f1": 0.571,
+          "latency_ms": 0.0
         },
         {
           "query": "kỹ thuật bón phân cho dưa hấu",
@@ -663,6 +3043,96 @@
           "latency_ms": 0.0
         },
         {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 3,
+          "n_relevant": 2,
+          "precision": 0.667,
+          "recall": 0.5,
+          "f1": 0.571,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.2,
+          "f1": 0.333,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.25,
+          "f1": 0.4,
+          "latency_ms": 0.0
+        },
+        {
           "query": "hướng dẫn đầu tư chứng khoán",
           "category": "negative",
           "n_results": 0,
@@ -670,7 +3140,37 @@
           "precision": 1.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     },
@@ -687,7 +3187,7 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
@@ -697,7 +3197,7 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
           "query": "cách xử lý rầy nâu hại lúa",
@@ -707,10 +3207,20 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
         },
         {
-          "query": "quy trình canh tác cà phê robusta",
+          "query": "lịch bón phân cho lúa hè thu miền nam",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "kỹ thuật sạ cụm lúa giảm giống",
           "category": "diễn_giải",
           "n_results": 0,
           "n_relevant": 0,
@@ -720,6 +3230,126 @@
           "latency_ms": 1.0
         },
         {
+          "query": "cách phòng bệnh đạo ôn trên lúa",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
           "query": "kỹ thuật bón phân cho dưa hấu",
           "category": "định_lượng",
           "n_results": 0,
@@ -727,7 +3357,97 @@
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách phòng bệnh sương mai trên cà chua",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "lịch tưới nước cho rau cải xanh mùa khô",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 15.6
+        },
+        {
+          "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         },
         {
           "query": "hướng dẫn đầu tư chứng khoán",
@@ -737,12 +3457,42 @@
           "precision": 1.0,
           "recall": 0.0,
           "f1": 0.0,
-          "latency_ms": 1.0
+          "latency_ms": 0.0
+        },
+        {
+          "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "công thức toán học tích phân bất định",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
         }
       ]
     }
   },
   "top_k_used": 5,
-  "n_test_queries": 6,
-  "generated_at": "2026-09-05T14:06:25.429039"
+  "n_test_queries": 31,
+  "generated_at": "2026-09-06T01:15:22.308416"
 }

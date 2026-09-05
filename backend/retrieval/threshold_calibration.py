@@ -48,6 +48,7 @@ CALIBRATION_FILE = Path(__file__).parent.parent.parent / "calibration_results.js
 # Mỗi test case: {query, expected_keywords, min_expected_matches}
 # expected_keywords: từ nào PHẢI xuất hiện trong kết quả tốt
 DEFAULT_TEST_QUERIES = [
+    # ─── Nhóm Lúa (8 câu) ─────────────────────────────────────────────────────
     {
         "query": "lượng phân đạm cho lúa đông xuân",
         "expected_keywords": ["phân đạm", "đạm", "lúa", "đông xuân", "urê"],
@@ -67,26 +68,184 @@ DEFAULT_TEST_QUERIES = [
         "category": "diễn_giải",
     },
     {
+        "query": "lịch bón phân cho lúa hè thu miền nam",
+        "expected_keywords": ["hè thu", "bón phân", "lúa", "đạm", "kali"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "kỹ thuật sạ cụm lúa giảm giống",
+        "expected_keywords": ["sạ cụm", "giống", "lúa", "mật độ"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "cách phòng bệnh đạo ôn trên lúa",
+        "expected_keywords": ["đạo ôn", "bệnh", "lúa", "thuốc", "phun"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "lượng nước tưới cho lúa giai đoạn đẻ nhánh",
+        "expected_keywords": ["tưới", "lúa", "đẻ nhánh", "nước"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "năng suất lúa OM5451 vụ đông xuân đồng bằng sông cửu long",
+        "expected_keywords": ["OM5451", "năng suất", "lúa", "đông xuân"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    # ─── Nhóm Sầu Riêng (5 câu) ───────────────────────────────────────────────
+    {
+        "query": "kỹ thuật xử lý ra hoa sầu riêng mùa nghịch",
+        "expected_keywords": ["sầu riêng", "ra hoa", "xử lý", "mùa nghịch"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "liều lượng phân bón NPK cho sầu riêng giai đoạn nuôi trái",
+        "expected_keywords": ["sầu riêng", "phân bón", "NPK", "nuôi trái"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách phòng trừ bệnh thối rễ sầu riêng",
+        "expected_keywords": ["sầu riêng", "thối rễ", "bệnh", "phun", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "giống sầu riêng Ri6 hay Monthong phù hợp Đắk Lắk",
+        "expected_keywords": ["sầu riêng", "Ri6", "Monthong", "giống"],
+        "min_expected_matches": 1,
+        "category": "phù_hợp/quan_hệ",
+    },
+    {
+        "query": "kỹ thuật tỉa cành tạo tán sầu riêng năm đầu",
+        "expected_keywords": ["sầu riêng", "tỉa cành", "tạo tán"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Nhóm Cà Phê / Tiêu / Điều (4 câu) ───────────────────────────────────
+    {
         "query": "quy trình canh tác cà phê robusta",
         "expected_keywords": ["cà phê", "robusta", "canh tác"],
         "min_expected_matches": 1,
         "category": "diễn_giải",
     },
     {
+        "query": "bón phân cho cà phê vối giai đoạn kinh doanh",
+        "expected_keywords": ["cà phê", "bón phân", "kinh doanh", "đạm"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "phòng trừ bệnh chết nhanh chết chậm trên hồ tiêu",
+        "expected_keywords": ["hồ tiêu", "chết nhanh", "bệnh", "nấm", "phòng trừ"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "kỹ thuật trồng và chăm sóc điều năng suất cao",
+        "expected_keywords": ["điều", "trồng", "chăm sóc", "năng suất"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Nhóm Rau Màu / Dưa Hấu / Ngô (5 câu) ────────────────────────────────
+    {
         "query": "kỹ thuật bón phân cho dưa hấu",
         "expected_keywords": ["dưa hấu", "phân bón", "NPK"],
         "min_expected_matches": 1,
         "category": "định_lượng",
     },
-    # Negative test cases — không nên trả về kết quả nông nghiệp
+    {
+        "query": "cách phòng bệnh sương mai trên cà chua",
+        "expected_keywords": ["cà chua", "sương mai", "bệnh", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "lịch tưới nước cho rau cải xanh mùa khô",
+        "expected_keywords": ["rau cải", "tưới nước", "mùa khô"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "bón phân urê cho ngô giai đoạn xoáy nõn",
+        "expected_keywords": ["ngô", "urê", "xoáy nõn", "bón phân"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "mật độ trồng dưa hấu trên đất cát ven biển",
+        "expected_keywords": ["dưa hấu", "mật độ", "trồng", "đất cát"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    # ─── Nhóm Phòng Trừ Sâu Bệnh Chung (5 câu) ───────────────────────────────
+    {
+        "query": "ngưỡng phun thuốc trừ sâu cuốn lá nhỏ trên lúa",
+        "expected_keywords": ["sâu cuốn lá", "ngưỡng", "phun thuốc", "lúa"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách sử dụng bẫy dính vàng để quản lý bọ trĩ",
+        "expected_keywords": ["bọ trĩ", "bẫy dính", "quản lý"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "thuốc trừ nấm gốc đồng phòng bệnh phytophthora trên cây có múi",
+        "expected_keywords": ["đồng", "nấm", "phytophthora", "cây có múi", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "thời điểm phun thuốc trừ sâu tốt nhất trong ngày",
+        "expected_keywords": ["phun thuốc", "thời điểm", "sáng sớm", "chiều mát"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "liều lượng dung dịch boron bổ sung cho cây ăn trái ra hoa",
+        "expected_keywords": ["boron", "ra hoa", "cây ăn trái", "phun"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    # ─── Negative test cases — không nên trả về kết quả nông nghiệp (4 câu) ───
     {
         "query": "hướng dẫn đầu tư chứng khoán",
-        "expected_keywords": [],  # Empty = không expect gì (nên trả về 0 kết quả relevant)
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "cách sửa điện thoại samsung bị vỡ màn hình",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "công thức toán học tích phân bất định",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "hướng dẫn nấu phở bò truyền thống hà nội",
+        "expected_keywords": [],
         "min_expected_matches": 0,
         "category": "negative",
         "is_negative": True,
     },
 ]
+
 
 
 # ─── Retrieval & Scoring ──────────────────────────────────────────────────
