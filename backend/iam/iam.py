@@ -118,48 +118,55 @@ def check_farm_access(
     Returns:
         AuthorizationResult: allowed=True nếu được phép
     """
+    res: AuthorizationResult
     if not farm_id:
-        return AuthorizationResult(
+        res = AuthorizationResult(
             allowed=False,
             reason="farm_id không được để trống — LLM không được tự sinh farm_id",
             farm_id=farm_id,
             user_id=farm_context.user_id,
         )
-
-    if farm_context.role == "admin" or "*" in farm_context.allowed_farm_ids:
+    elif farm_context.role == "admin" or "*" in farm_context.allowed_farm_ids:
         logger.info(
             f"IAM ALLOW (admin): tool={tool_name} farm={farm_id} user={farm_context.username}"
         )
-        return AuthorizationResult(
+        res = AuthorizationResult(
             allowed=True,
             reason="admin có toàn quyền",
             farm_id=farm_id,
             user_id=farm_context.user_id,
         )
-
-    if farm_id in farm_context.allowed_farm_ids:
+    elif farm_id in farm_context.allowed_farm_ids:
         logger.info(
             f"IAM ALLOW: tool={tool_name} farm={farm_id} user={farm_context.username}"
         )
-        return AuthorizationResult(
+        res = AuthorizationResult(
             allowed=True,
             reason="user có quyền truy cập farm này",
             farm_id=farm_id,
             user_id=farm_context.user_id,
         )
+    else:
+        # Cross-farm access bị chặn — LOG BẮT BUỘC
+        logger.warning(
+            f"IAM DENY [CROSS-FARM BLOCKED]: "
+            f"tool={tool_name} farm={farm_id} user={farm_context.username} "
+            f"allowed_farms={farm_context.allowed_farm_ids}"
+        )
+        res = AuthorizationResult(
+            allowed=False,
+            reason=f"User '{farm_context.username}' không có quyền truy cập farm '{farm_id}'",
+            farm_id=farm_id,
+            user_id=farm_context.user_id,
+        )
 
-    # Cross-farm access bị chặn — LOG BẮT BUỘC
-    logger.warning(
-        f"IAM DENY [CROSS-FARM BLOCKED]: "
-        f"tool={tool_name} farm={farm_id} user={farm_context.username} "
-        f"allowed_farms={farm_context.allowed_farm_ids}"
-    )
-    return AuthorizationResult(
-        allowed=False,
-        reason=f"User '{farm_context.username}' không có quyền truy cập farm '{farm_id}'",
-        farm_id=farm_id,
-        user_id=farm_context.user_id,
-    )
+    try:
+        from backend.monitoring import record_iam_check
+        record_iam_check(res.allowed, farm_id or "", farm_context.username)
+    except Exception:
+        pass
+
+    return res
 
 
 def require_farm_access(
