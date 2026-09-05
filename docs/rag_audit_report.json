@@ -1,0 +1,22 @@
+{
+  "corpus_audit": {
+    "corpus_version": "1.0.0",
+    "system_version": "2.2.0",
+    "total_documents": 2,
+    "approved_documents": 2,
+    "pending_documents": 0,
+    "ocr_coverage_pct": 100.0,
+    "audited_at": "2026-09-05T14:31:25.321188",
+    "details": {
+      "status": "healthy",
+      "trust_tier": "verified_agriculture_docs"
+    }
+  },
+  "citation_validation": {
+    "total_chunks_checked": 50,
+    "grounded_chunks": 50,
+    "grounded_rate_pct": 100.0,
+    "note": "Kiểm tra tính xác thực số liệu trong chunk so với metadata retrieval"
+  },
+  "generated_at": "2026-09-05T14:31:26.065139"
+}

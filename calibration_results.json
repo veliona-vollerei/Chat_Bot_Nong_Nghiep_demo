@@ -1,0 +1,748 @@
+{
+  "current_threshold": 0.6,
+  "optimal_threshold": 0.3,
+  "optimal_f1": 0.828,
+  "recommendation": "Đề xuất giảm threshold từ 0.6 → 0.3 (F1 optimal: 0.828). Cập nhật SIMILARITY_THRESHOLD trong backend/config.py",
+  "per_threshold": {
+    "0.3": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1046.3
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 4.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 2.5
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 2.5
+        }
+      ]
+    },
+    "0.4": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.5": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 2.0
+        }
+      ]
+    },
+    "0.55": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.6": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.5
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.65": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.7": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 2.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.75": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 2.0
+        }
+      ]
+    },
+    "0.8": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.867,
+      "avg_f1": 0.828,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 4,
+          "precision": 0.8,
+          "recall": 1.0,
+          "f1": 0.889,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 1,
+          "precision": 0.2,
+          "recall": 0.333,
+          "f1": 0.25,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 5,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.85": {
+      "avg_precision": 0.8,
+      "avg_recall": 0.547,
+      "avg_f1": 0.614,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 5,
+          "n_relevant": 5,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 2,
+          "n_relevant": 2,
+          "precision": 1.0,
+          "recall": 0.4,
+          "f1": 0.571,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 4,
+          "n_relevant": 4,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 1,
+          "n_relevant": 1,
+          "precision": 1.0,
+          "recall": 0.333,
+          "f1": 0.5,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 0.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    },
+    "0.9": {
+      "avg_precision": 0.0,
+      "avg_recall": 0.0,
+      "avg_f1": 0.0,
+      "queries": [
+        {
+          "query": "lượng phân đạm cho lúa đông xuân",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "giống lúa phù hợp đất phèn nhẹ vùng đồng bằng sông cửu long",
+          "category": "phù_hợp/quan_hệ",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "cách xử lý rầy nâu hại lúa",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "quy trình canh tác cà phê robusta",
+          "category": "diễn_giải",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "kỹ thuật bón phân cho dưa hấu",
+          "category": "định_lượng",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        },
+        {
+          "query": "hướng dẫn đầu tư chứng khoán",
+          "category": "negative",
+          "n_results": 0,
+          "n_relevant": 0,
+          "precision": 1.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "latency_ms": 1.0
+        }
+      ]
+    }
+  },
+  "top_k_used": 5,
+  "n_test_queries": 6,
+  "generated_at": "2026-09-05T14:06:25.429039"
+}
