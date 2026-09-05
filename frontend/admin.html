@@ -63,6 +63,9 @@
                 <button class="admin-tab-btn" id="tabMonitoringBtn" onclick="switchAdminTab('monitoring')">
                     📡 Giám Sát Hệ Thống
                 </button>
+                <button class="admin-tab-btn" id="tabExpertReviewBtn" onclick="switchAdminTab('expertReview')">
+                    🧑‍🌾 Review Chuyên Gia
+                </button>
             </div>
 
             <!-- Tab 1: Upload Dữ liệu -->
@@ -206,6 +209,68 @@
                     <div id="monitoringContent" style="padding:16px 0">
                         <p style="color:var(--text-muted);text-align:center">Đang tải metric...</p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Review Chuyên Gia Nông Học -->
+        <div class="admin-tab-content hidden" id="adminExpertReviewSection">
+            <div class="benchmark-card">
+                <div class="benchmark-card-header">
+                    <div>
+                        <h3>🧑‍🌾 Review Chuyên Gia Nông Học</h3>
+                        <p>Chuyên gia đánh giá Đúng/Sai/Không chắc cho câu trả lời chatbot — từ benchmark chuẩn và/hoặc hội thoại thật của người dùng</p>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <select id="expertReviewSourceFilter" onchange="loadExpertReviewQueue()" style="padding:6px 10px;border-radius:8px">
+                            <option value="all">Tất cả nguồn</option>
+                            <option value="benchmark">Chỉ Benchmark 260 câu (đã có AI-Judge)</option>
+                            <option value="conversations">Chỉ Hội thoại thật (chưa qua AI-Judge)</option>
+                        </select>
+                        <button class="benchmark-reload-btn" onclick="loadExpertReviewQueue()">🔄 Tải lại</button>
+                    </div>
+                </div>
+                <div class="benchmark-summary" id="expertReviewSummary" style="display:none">
+                    <div class="summary-item">
+                        <span class="summary-label">Tổng số câu</span>
+                        <span class="summary-value" id="erTotal">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Từ Benchmark</span>
+                        <span class="summary-value" id="erBenchCount">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Từ Hội thoại thật</span>
+                        <span class="summary-value" id="erConvCount">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Đã review</span>
+                        <span class="summary-value" id="erReviewed">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Đồng thuận với AI-Judge</span>
+                        <span class="summary-value" id="erAgreement" style="color:var(--accent-gold)">-</span>
+                    </div>
+                </div>
+                <div class="benchmark-table-wrapper" id="expertReviewWrapper">
+                    <div class="benchmark-empty" id="expertReviewEmpty">
+                        <span>⏳</span><p>Đang tải danh sách câu hỏi cần review...</p>
+                    </div>
+                    <table class="benchmark-table" id="expertReviewTable" style="display:none">
+                        <thead>
+                            <tr>
+                                <th style="width:3%">#</th>
+                                <th style="width:7%">Nguồn</th>
+                                <th style="width:16%">Câu hỏi</th>
+                                <th style="width:16%">Đáp án chuẩn</th>
+                                <th style="width:20%">Đáp án Chatbot</th>
+                                <th style="width:9%">AI-Judge</th>
+                                <th style="width:14%">Đánh giá Chuyên Gia</th>
+                                <th style="width:15%">Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expertReviewTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -391,6 +456,109 @@
             return html;
         }
 
+        // ─── Expert Review Tab (Benchmark + Hội thoại thật) ────────────────────────────
+        async function loadExpertReviewQueue() {
+            const user = JSON.parse(localStorage.getItem("chat_user") || "null");
+            const username = user ? user.username : "";
+            const sourceFilter = document.getElementById("expertReviewSourceFilter").value;
+            const empty = document.getElementById("expertReviewEmpty");
+            const table = document.getElementById("expertReviewTable");
+            const tbody = document.getElementById("expertReviewTableBody");
+            const summary = document.getElementById("expertReviewSummary");
+
+            empty.style.display = "flex";
+            table.style.display = "none";
+            empty.innerHTML = "<span>⏳</span><p>Đang tải...</p>";
+
+            try {
+                const res = await fetch(`/api/admin/expert-review/queue?username=${encodeURIComponent(username)}&source=${sourceFilter}`);
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: "Lỗi không xác định" }));
+                    throw new Error(err.detail || "Lỗi tải dữ liệu");
+                }
+                const data = await res.json();
+
+                document.getElementById("erTotal").textContent = data.total;
+                document.getElementById("erBenchCount").textContent = data.benchmark_count;
+                document.getElementById("erConvCount").textContent = data.conversation_count;
+                document.getElementById("erReviewed").textContent = data.reviewed_count;
+                document.getElementById("erAgreement").textContent =
+                    data.agreement_rate_pct !== null ? `${data.agreement_rate_pct}%` : "-";
+                summary.style.display = "flex";
+
+                if (!data.items || data.items.length === 0) {
+                    empty.innerHTML = "<span>📭</span><p>Chưa có câu nào cần review.</p>";
+                    return;
+                }
+
+                tbody.innerHTML = data.items.map((item, i) => {
+                    const verdictOptions = ["", "correct", "incorrect", "unsure"];
+                    const verdictLabels = { "": "-- Chọn --", correct: "✅ Đúng", incorrect: "❌ Sai", unsure: "❓ Không chắc" };
+                    const sourceTag = item.source === "benchmark"
+                        ? '<span style="background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 6px;border-radius:4px;font-size:10px">📊 Benchmark</span>'
+                        : '<span style="background:rgba(168,85,247,0.15);color:#c084fc;padding:2px 6px;border-radius:4px;font-size:10px">💬 Hội thoại</span>';
+                    const aiCell = item.ai_verdict
+                        ? `<span style="color:${item.ai_verdict === 'correct' ? '#22c55e' : '#ef4444'}">${item.ai_verdict === 'correct' ? '✅ Đúng' : '❌ Sai'}</span><br>F:${item.factual_score ?? '-'} S:${item.semantic_score ?? '-'}`
+                        : `<span style="color:var(--text-muted);font-size:11px">Chưa chấm</span>`;
+                    const askedInfo = item.source === "conversation"
+                        ? `<div style="font-size:10px;color:var(--text-muted);margin-top:4px">👤 ${item.asked_by || 'ẩn danh'}</div>`
+                        : "";
+                    const escapedId = item.item_id.replace(/"/g, '&quot;');
+                    return `
+                    <tr data-item-id="${escapedId}">
+                        <td>${i + 1}</td>
+                        <td>${sourceTag}</td>
+                        <td style="font-size:12px">${item.question || ""}${askedInfo}</td>
+                        <td style="font-size:12px">${item.oracle_answer || "<i style='color:var(--text-muted)'>Không có</i>"}</td>
+                        <td style="font-size:12px">${(item.chatbot_answer || "").slice(0, 300)}</td>
+                        <td style="font-size:11px">${aiCell}</td>
+                        <td>
+                            <select class="expert-verdict-select" data-item-id="${escapedId}" style="width:100%;padding:4px;border-radius:6px">
+                                ${verdictOptions.map(v => `<option value="${v}" ${item.expert_verdict === v ? "selected" : ""}>${verdictLabels[v]}</option>`).join("")}
+                            </select>
+                        </td>
+                        <td>
+                            <textarea class="expert-note-input" data-item-id="${escapedId}" rows="2" style="width:100%;font-size:11px;border-radius:6px" placeholder="Ghi chú...">${item.expert_note || ""}</textarea>
+                            <button style="margin-top:4px;font-size:11px" onclick="saveExpertReview(this)">&#128190; Lưu</button>
+                        </td>
+                    </tr>`;
+                }).join("");
+
+                empty.style.display = "none";
+                table.style.display = "table";
+            } catch (e) {
+                empty.innerHTML = `<span>⚠️</span><p style="color:#ef4444">${e.message}</p>`;
+            }
+        }
+
+        async function saveExpertReview(btn) {
+            const user = JSON.parse(localStorage.getItem("chat_user") || "null");
+            const username = user ? user.username : "";
+            const row = btn.closest('tr');
+            const itemId = row.dataset.itemId;
+            const verdict = row.querySelector(".expert-verdict-select").value;
+            const note = row.querySelector(".expert-note-input").value;
+
+            if (!verdict) {
+                alert("⊶ Vui lòng chọn đánh giá (Đúng/Sai/Không chắc) trước khi lưu.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/expert-review/submit?username=${encodeURIComponent(username)}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ item_id: itemId, verdict, note }),
+                });
+                if (!res.ok) throw new Error(await res.text());
+                btn.textContent = "✅ Đã lưu";
+                btn.style.color = "#22c55e";
+                setTimeout(() => loadExpertReviewQueue(), 1000);
+            } catch (e) {
+                alert("❌ Lỗi lưu: " + e.message);
+            }
+        }
+
         // Override switchAdminTab để thêm monitoring tab
         const _origSwitchAdminTab = typeof switchAdminTab !== 'undefined' ? switchAdminTab : null;
         function switchAdminTab(tabName) {
@@ -399,12 +567,14 @@
                 users: 'adminUsersSection',
                 benchmark: 'adminBenchmarkSection',
                 monitoring: 'adminMonitoringSection',
+                expertReview: 'adminExpertReviewSection',
             };
             const btnIds = {
                 upload: 'tabUploadBtn',
                 users: 'tabUsersBtn',
                 benchmark: 'tabBenchmarkBtn',
                 monitoring: 'tabMonitoringBtn',
+                expertReview: 'tabExpertReviewBtn',
             };
             Object.values(tabs).forEach(id => {
                 const el = document.getElementById(id);
@@ -425,6 +595,8 @@
                 if (typeof loadAdminUsers === 'function') loadAdminUsers();
             } else if (tabName === 'benchmark') {
                 if (typeof loadBenchmarkResults === 'function') loadBenchmarkResults();
+            } else if (tabName === 'expertReview') {
+                if (typeof loadExpertReviewQueue === 'function') loadExpertReviewQueue();
             }
         }
     </script>

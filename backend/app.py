@@ -1103,6 +1103,184 @@ async def benchmark_run(req: BenchmarkRunRequest, username: Optional[str] = None
 
 
 
+# ─── Expert Review (Chuyên Gia Nông Học) ────────────────────────────────────
+# Gộp 2 nguồn: (1) benchmark 260 câu đã chấm bằng AI-Judge, (2) hội thoại thật
+# của người dùng (chưa qua AI-Judge, chỉ review thủ công).
+
+EXPERT_REVIEW_QUEUE_FILE = BASE_DIR / "data" / "expert_review_queue.json"
+EXPERT_REVIEWS_FILE = BASE_DIR / "data" / "expert_reviews.json"
+
+
+def _load_benchmark_review_items() -> list:
+    """Nạp câu hỏi từ lần chạy benchmark full_flow gần nhất (nếu có)."""
+    if not EXPERT_REVIEW_QUEUE_FILE.exists():
+        return []
+    try:
+        data = json.loads(EXPERT_REVIEW_QUEUE_FILE.read_text(encoding="utf-8"))
+        items = []
+        for entry in data.get("items", []):
+            qid = str(entry.get("q_id") or "")
+            items.append({
+                "item_id": f"bench:{qid}",
+                "source": "benchmark",
+                "category": entry.get("category", "other"),
+                "question": entry.get("question", ""),
+                "chatbot_answer": entry.get("chatbot_answer", ""),
+                "oracle_answer": entry.get("oracle_answer"),
+                "ai_verdict": entry.get("ai_verdict"),
+                "factual_score": entry.get("factual_score"),
+                "semantic_score": entry.get("semantic_score"),
+                "asked_by": None,
+                "asked_at": None,
+            })
+        return items
+    except Exception as e:
+        logger.warning(f"Không đọc được expert_review_queue.json: {e}")
+        return []
+
+
+def _load_conversation_review_items(limit_sessions: int = 50, limit_pairs: int = 300) -> list:
+    """
+    Trích các cặp (câu hỏi người dùng → câu trả lời bot) từ hội thoại thật
+    đã lưu trong DB, để chuyên gia review — không qua AI-Judge tự động.
+    """
+    items = []
+    try:
+        sessions = get_all_sessions(limit=limit_sessions)
+        for sess in sessions:
+            session_id = sess.get("session_id")
+            username = sess.get("username")
+            messages = get_chat_history(session_id, limit=100)
+            # Ghép mỗi tin nhắn user với tin nhắn bot ngay sau đó
+            for i in range(len(messages) - 1):
+                cur_msg = messages[i]
+                nxt_msg = messages[i + 1]
+                if cur_msg.get("sender") == "user" and nxt_msg.get("sender") in ("bot", "assistant"):
+                    items.append({
+                        "item_id": f"conv:{session_id}:{i}",
+                        "source": "conversation",
+                        "category": "conversation",
+                        "question": cur_msg.get("content", ""),
+                        "chatbot_answer": nxt_msg.get("content", ""),
+                        "oracle_answer": None,
+                        "ai_verdict": None,
+                        "factual_score": None,
+                        "semantic_score": None,
+                        "asked_by": username,
+                        "asked_at": str(cur_msg.get("created_at") or ""),
+                    })
+                    if len(items) >= limit_pairs:
+                        return items
+    except Exception as e:
+        logger.warning(f"Không đọc được hội thoại thật để review: {e}")
+    return items
+
+
+def _load_expert_reviews() -> dict:
+    if EXPERT_REVIEWS_FILE.exists():
+        try:
+            return json.loads(EXPERT_REVIEWS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _save_expert_reviews(data: dict):
+    EXPERT_REVIEWS_FILE.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+@app.get("/api/admin/expert-review/queue")
+async def expert_review_get_queue(
+    username: Optional[str] = None,
+    source: str = "all",  # "all" | "benchmark" | "conversations"
+):
+    """
+    Admin: Lấy danh sách câu hỏi cần chuyên gia nông học review.
+    source="benchmark": chỉ 260 câu benchmark (đã có AI-Judge chấm điểm)
+    source="conversations": chỉ hội thoại thật của người dùng (chưa chấm AI)
+    source="all" (mặc định): gộp cả hai
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    all_items = []
+    if source in ("all", "benchmark"):
+        all_items.extend(_load_benchmark_review_items())
+    if source in ("all", "conversations"):
+        all_items.extend(_load_conversation_review_items())
+
+    if not all_items:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Chưa có dữ liệu để review. Với nguồn benchmark: chạy "
+                "'python -m backend.simulator.benchmark_evaluator' (full_flow). "
+                "Với nguồn hội thoại: cần người dùng đã trò chuyện với chatbot ít nhất 1 lần."
+            ),
+        )
+
+    reviews = _load_expert_reviews()
+    combined = []
+    for item in all_items:
+        saved = reviews.get(item["item_id"], {})
+        combined.append({
+            **item,
+            "expert_verdict": saved.get("verdict"),
+            "expert_note": saved.get("note", ""),
+            "reviewed_at": saved.get("reviewed_at"),
+            "reviewed_by": saved.get("reviewed_by"),
+        })
+
+    reviewed_count = sum(1 for c in combined if c["expert_verdict"])
+    ai_judged = [c for c in combined if c.get("ai_verdict")]
+    agree_count = sum(
+        1 for c in ai_judged
+        if c["expert_verdict"] and c["expert_verdict"] == c.get("ai_verdict")
+    )
+    ai_judged_reviewed = sum(1 for c in ai_judged if c["expert_verdict"])
+
+    return {
+        "total": len(combined),
+        "reviewed_count": reviewed_count,
+        "benchmark_count": sum(1 for c in combined if c["source"] == "benchmark"),
+        "conversation_count": sum(1 for c in combined if c["source"] == "conversation"),
+        "agreement_rate_pct": (
+            round(agree_count / ai_judged_reviewed * 100, 1) if ai_judged_reviewed else None
+        ),
+        "items": combined,
+    }
+
+
+@app.post("/api/admin/expert-review/submit")
+async def expert_review_submit(payload: dict, username: Optional[str] = None):
+    """Admin/Chuyên gia: Gửi đánh giá Đúng/Sai/Không chắc + ghi chú cho 1 câu (bench hoặc conversation)."""
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    item_id = str(payload.get("item_id", ""))
+    verdict = payload.get("verdict")  # "correct" | "incorrect" | "unsure"
+    note = payload.get("note", "")
+
+    if not item_id or verdict not in ("correct", "incorrect", "unsure"):
+        raise HTTPException(status_code=400, detail="Cần item_id và verdict hợp lệ (correct/incorrect/unsure).")
+
+    reviews = _load_expert_reviews()
+    reviews[item_id] = {
+        "verdict": verdict,
+        "note": note,
+        "reviewed_at": datetime.now().isoformat(),
+        "reviewed_by": username,
+    }
+    _save_expert_reviews(reviews)
+    return {"status": "success", "item_id": item_id, "verdict": verdict}
+
+
 @app.get("/health")
 async def health_check():
     """Kiểm tra trạng thái hệ thống."""

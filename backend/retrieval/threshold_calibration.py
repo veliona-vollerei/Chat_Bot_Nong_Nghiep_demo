@@ -244,6 +244,275 @@ DEFAULT_TEST_QUERIES = [
         "category": "negative",
         "is_negative": True,
     },
+    # ─────────────────────────────────────────────────────────────────────────
+    # MỞ RỘNG v2 — thêm ~42 câu đưa tổng từ 31 → 73 câu (Mục 8)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    # ─── Sầu Riêng bổ sung (8 câu) ───────────────────────────────────────────
+    {
+        "query": "lượng phân kali bón cho sầu riêng trước thu hoạch",
+        "expected_keywords": ["sầu riêng", "kali", "bón phân", "thu hoạch"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "kỹ thuật tưới nước cho sầu riêng mùa khô tây nguyên",
+        "expected_keywords": ["sầu riêng", "tưới nước", "mùa khô", "Tây Nguyên"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách phòng trị sâu đục trái sầu riêng",
+        "expected_keywords": ["sầu riêng", "sâu đục trái", "phòng trị", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "biểu hiện bệnh xì mủ thân cành sầu riêng và cách xử lý",
+        "expected_keywords": ["sầu riêng", "xì mủ", "bệnh", "xử lý"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "thời gian từ ra hoa đến thu hoạch sầu riêng Monthong",
+        "expected_keywords": ["sầu riêng", "Monthong", "ra hoa", "thu hoạch"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "mật độ trồng sầu riêng trên đất đỏ bazan",
+        "expected_keywords": ["sầu riêng", "mật độ", "trồng", "đất đỏ", "bazan"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách xử lý sầu riêng ra hoa đồng loạt bằng kali chlorate",
+        "expected_keywords": ["sầu riêng", "kali chlorate", "ra hoa", "xử lý"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "triệu chứng thiếu canxi magiê trên sầu riêng",
+        "expected_keywords": ["sầu riêng", "canxi", "magiê", "thiếu", "lá"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Cà Phê bổ sung (6 câu) ───────────────────────────────────────────────
+    {
+        "query": "lượng phân đạm bón cho cà phê giai đoạn nuôi trái",
+        "expected_keywords": ["cà phê", "đạm", "bón phân", "nuôi trái"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách phòng trừ bệnh gỉ sắt trên cà phê",
+        "expected_keywords": ["cà phê", "gỉ sắt", "bệnh", "thuốc", "phun"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "giống cà phê arabica phù hợp trồng ở độ cao bao nhiêu",
+        "expected_keywords": ["cà phê", "arabica", "độ cao", "giống"],
+        "min_expected_matches": 1,
+        "category": "phù_hợp/quan_hệ",
+    },
+    {
+        "query": "kỹ thuật tạo bóng mát cho vườn cà phê",
+        "expected_keywords": ["cà phê", "bóng mát", "cây che bóng", "tạo bóng"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "lịch tưới nước cho cà phê mùa khô tại Đắk Lắk",
+        "expected_keywords": ["cà phê", "tưới nước", "mùa khô", "Đắk Lắk"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cà phê robusta hay arabica phù hợp đất bazan Tây Nguyên",
+        "expected_keywords": ["cà phê", "robusta", "arabica", "bazan", "Tây Nguyên"],
+        "min_expected_matches": 1,
+        "category": "phù_hợp/quan_hệ",
+    },
+    # ─── Hồ Tiêu bổ sung (5 câu) ──────────────────────────────────────────────
+    {
+        "query": "liều lượng phân hữu cơ bón cho tiêu kinh doanh",
+        "expected_keywords": ["tiêu", "hồ tiêu", "phân hữu cơ", "bón", "kinh doanh"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách nhận biết và trị bệnh tuyến trùng hại rễ tiêu",
+        "expected_keywords": ["hồ tiêu", "tiêu", "tuyến trùng", "rễ", "bệnh"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "kỹ thuật trồng tiêu trụ sống tiết kiệm chi phí",
+        "expected_keywords": ["tiêu", "hồ tiêu", "trụ sống", "trồng", "kỹ thuật"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "mật độ trồng hồ tiêu leo trụ gỗ",
+        "expected_keywords": ["hồ tiêu", "tiêu", "mật độ", "trụ gỗ"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "phun thuốc gì để phòng ngừa nấm Phytophthora trên tiêu",
+        "expected_keywords": ["tiêu", "hồ tiêu", "Phytophthora", "nấm", "phun thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Điều bổ sung (4 câu) ─────────────────────────────────────────────────
+    {
+        "query": "lượng phân NPK bón cho điều kinh doanh mỗi năm",
+        "expected_keywords": ["điều", "NPK", "bón phân", "kinh doanh"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "phòng trừ bọ xít muỗi hại điều",
+        "expected_keywords": ["điều", "bọ xít muỗi", "phòng trừ", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "giống điều năng suất cao phù hợp Bình Phước",
+        "expected_keywords": ["điều", "giống", "năng suất", "Bình Phước"],
+        "min_expected_matches": 1,
+        "category": "phù_hợp/quan_hệ",
+    },
+    {
+        "query": "kỹ thuật ghép cải tạo vườn điều già cỗi",
+        "expected_keywords": ["điều", "ghép", "cải tạo", "già cỗi"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Rau màu / Dưa hấu / Ngô bổ sung (6 câu) ─────────────────────────────
+    {
+        "query": "lượng phân bón cho dưa hấu giai đoạn phình trái",
+        "expected_keywords": ["dưa hấu", "phân bón", "phình trái"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cách quản lý bệnh héo xanh vi khuẩn trên ớt",
+        "expected_keywords": ["ớt", "héo xanh", "vi khuẩn", "bệnh"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "mật độ gieo ngô lai trên đất thịt nhẹ",
+        "expected_keywords": ["ngô", "mật độ", "gieo", "đất thịt"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "kỹ thuật trồng rau muống nước ao",
+        "expected_keywords": ["rau muống", "nước", "trồng", "ao"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "phòng bệnh đốm lá trên bắp cải",
+        "expected_keywords": ["bắp cải", "đốm lá", "bệnh", "phòng"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "khoảng cách hàng và cây khi trồng ngô ngọt",
+        "expected_keywords": ["ngô ngọt", "khoảng cách", "trồng", "hàng"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    # ─── Câu mơ hồ / dễ lẫn nguồn (8 câu) ────────────────────────────────────
+    # Mục tiêu: test RAG không "vơ" nhầm tài liệu lúa khi hỏi về sầu riêng
+    {
+        "query": "cây bị vàng lá và rụng trái hàng loạt phải làm gì",
+        "expected_keywords": ["vàng lá", "rụng trái", "bệnh", "nguyên nhân"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "phân nào giúp cây ra nhiều bông hơn",
+        "expected_keywords": ["phân", "ra hoa", "bông", "kali", "lân"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "cây ăn trái bị nấm thối gốc xử lý thế nào",
+        "expected_keywords": ["nấm", "thối gốc", "cây ăn trái", "xử lý", "thuốc"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "lượng nước tưới cho cây trong mùa khô",
+        "expected_keywords": ["tưới", "nước", "mùa khô"],
+        "min_expected_matches": 1,
+        "category": "định_lượng",
+    },
+    {
+        "query": "cần bón thêm loại phân gì khi đất bị chua",
+        "expected_keywords": ["đất chua", "phân", "vôi", "pH"],
+        "min_expected_matches": 1,
+        "category": "phù_hợp/quan_hệ",
+    },
+    {
+        "query": "sâu nào thường phá hại nhất trong vụ xuân",
+        "expected_keywords": ["sâu", "vụ xuân", "phá hại", "phòng trừ"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "kỹ thuật bón phân sau thu hoạch để phục hồi cây",
+        "expected_keywords": ["bón phân", "thu hoạch", "phục hồi"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    {
+        "query": "làm sao biết cây đủ dinh dưỡng hay đang thiếu phân",
+        "expected_keywords": ["dinh dưỡng", "thiếu phân", "lá", "biểu hiện"],
+        "min_expected_matches": 1,
+        "category": "diễn_giải",
+    },
+    # ─── Negative bổ sung — ngoài phạm vi nông nghiệp (5 câu) ────────────────
+    {
+        "query": "hướng dẫn lập trình python từ cơ bản đến nâng cao",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "cách đăng ký tài khoản ngân hàng online",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "lịch thi đấu bóng đá ngoại hạng anh tuần này",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "cách nấu bún bò huế thơm ngon",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
+    {
+        "query": "hướng dẫn lái xe ô tô cho người mới bắt đầu",
+        "expected_keywords": [],
+        "min_expected_matches": 0,
+        "category": "negative",
+        "is_negative": True,
+    },
 ]
 
 

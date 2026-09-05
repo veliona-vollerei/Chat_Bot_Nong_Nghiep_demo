@@ -332,7 +332,15 @@ def evaluate_benchmark(
                 judge_detail = _call_gemini_judge(q_text, ground_truth, chatbot_answer)
                 avg_score = (judge_detail["factual_score"] + judge_detail["semantic_score"]) / 2
                 passed = avg_score >= PASS_THRESHOLD_SCORE
-                judge_scores.append({**judge_detail, "q_id": q.get("q_id"), "category": cat})
+                judge_scores.append({
+                    **judge_detail,
+                    "q_id": q.get("q_id"),
+                    "category": cat,
+                    "question": q_text,
+                    "chatbot_answer": chatbot_answer,
+                    "oracle_answer": ground_truth,
+                    "ai_verdict": "correct" if passed else "incorrect",
+                })
                 if not passed:
                     reason = f"Judge avg score {avg_score:.0f} < {PASS_THRESHOLD_SCORE}"
 
@@ -356,6 +364,12 @@ def evaluate_benchmark(
                     "category": cat,
                     "passed": passed,
                     "reason": reason,
+                    "question": q_text,
+                    "chatbot_answer": chatbot_answer,
+                    "oracle_answer": oracle_answer,
+                    "factual_score": 100.0 if passed else 0.0,
+                    "semantic_score": 100.0 if passed else 0.0,
+                    "ai_verdict": "correct" if passed else "incorrect",
                 })
 
         elif cat in ["vietnamese_typo_robustness", "irrigation_history", "irrigation_schedule", "multi_turn_context"]:
@@ -424,8 +438,29 @@ def evaluate_benchmark(
             "avg_factual_score": round(sum(factual_scores) / len(factual_scores), 1) if factual_scores else None,
             "avg_semantic_score": round(sum(semantic_scores) / len(semantic_scores), 1) if semantic_scores else None,
             "pass_threshold": PASS_THRESHOLD_SCORE,
-            "details": judge_scores[:10],  # Sample 10 đầu để không quá dài
+            "details": judge_scores[:10],  # Sample 10 đầu trong acceptance_results.json để không quá dài
         }
+
+        # Ghi TOÀN BỘ judge_scores (không cắt) ra file riêng cho trang Expert Review.
+        # Không dùng schema_check_only vì lúc đó không có câu trả lời thật để review.
+        if not schema_check_only:
+            try:
+                review_queue_path = Path(benchmark_path).parent / "expert_review_queue.json"
+                review_queue_path.write_text(
+                    json.dumps(
+                        {
+                            "generated_at": datetime.now().isoformat(),
+                            "total_items": len(judge_scores),
+                            "items": judge_scores,
+                        },
+                        ensure_ascii=False,
+                        indent=2,
+                    ),
+                    encoding="utf-8",
+                )
+                print(f"\U0001f4cb \u0110\u00e3 ghi {len(judge_scores)} c\u00e2u v\u00e0o {review_queue_path} \u0111\u1ec3 chuy\u00ean gia review.")
+            except Exception as e:
+                logger.warning(f"Kh\u00f4ng ghi \u0111\u01b0\u1ee3c expert_review_queue.json: {e}")
 
     return AcceptanceSummary(
         total_questions=len(questions),
