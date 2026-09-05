@@ -11,14 +11,14 @@ BASE_DIR = Path(__file__).parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # === Gemini — Key Rotation Pool ===
-# Đọc lần lượt GEMINI_API_KEY_1..4, lọc bỏ key rỗng / placeholder
+# Đọc lần lượt GEMINI_API_KEY_1..8, lọc bỏ key rỗng / placeholder
 _PLACEHOLDER = "your_key_here"
 GEMINI_API_KEYS: list = [
-    k for i in range(1, 5)
+    k for i in range(1, 9)  # mở rộng từ 4 → 8 keys
     if (k := os.getenv(f"GEMINI_API_KEY_{i}", "").strip())
     and k != _PLACEHOLDER
 ]
-# Backward-compat: nếu không có key nào từ _1.._4, thử GEMINI_API_KEY cũ
+# Backward-compat: nếu không có key nào từ _1.._8, thử GEMINI_API_KEY cũ
 if not GEMINI_API_KEYS:
     _legacy = os.getenv("GEMINI_API_KEY", "").strip()
     if _legacy and _legacy != _PLACEHOLDER:
@@ -27,8 +27,16 @@ if not GEMINI_API_KEYS:
 # Giữ GEMINI_API_KEY để không break import ở nơi khác còn dùng trực tiếp
 GEMINI_API_KEY = GEMINI_API_KEYS[0] if GEMINI_API_KEYS else ""
 
-GEMINI_ROUTER_MODEL = os.getenv("GEMINI_ROUTER_MODEL", "gemini-3.1-flash-lite")
+# === Gemini — Model Config ===
+# Mỗi vai trò có thể dùng model khác nhau để cân bằng giữa tốc độ và chất lượng:
+# - ROUTER : phân loại intent nhanh — dùng model nhẹ (Flash-Lite)
+# - SYNTHESIS : tổng hợp câu trả lời — dùng model cân bằng (Flash)
+# - JUDGE : chấm điểm LLM-as-Judge trong benchmark — dùng model chính xác (Pro / Flash)
+# - FALLBACK : dự phòng khi các model trên bị rate-limit — dùng model nhẹ nhất
+GEMINI_ROUTER_MODEL    = os.getenv("GEMINI_ROUTER_MODEL",    "gemini-3.1-flash-lite")
 GEMINI_SYNTHESIS_MODEL = os.getenv("GEMINI_SYNTHESIS_MODEL", "gemini-3.6-flash")
+GEMINI_JUDGE_MODEL     = os.getenv("GEMINI_JUDGE_MODEL",     "gemini-3.6-flash")
+GEMINI_FALLBACK_MODEL  = os.getenv("GEMINI_FALLBACK_MODEL",  "gemini-3.1-flash-lite")
 
 # === PostgreSQL (Tầng 1 + Tầng 2 KG) ===
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
@@ -71,7 +79,7 @@ def validate_config():
     if not GEMINI_API_KEYS:
         errors.append(
             "Chưa có Gemini API Key nào hợp lệ. "
-            "Điền ít nhất 1 key vào GEMINI_API_KEY_1..4 trong .env"
+            "Vui lòng điền ít nhất 1 key vào GEMINI_API_KEY_1..8 trong .env"
         )
     if not POSTGRES_PASSWORD or "your_" in POSTGRES_PASSWORD:
         errors.append("POSTGRES_PASSWORD chưa được điền vào .env")
@@ -86,7 +94,11 @@ if __name__ == "__main__":
             print(f"  - {e}")
     else:
         print("✅ Cấu hình OK!")
-        print(f"  Gemini Keys: {len(GEMINI_API_KEYS)} key(s) đã nạp")
-        print(f"  Postgres : {POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
-        print(f"  ChromaDB : {CHROMA_PERSIST_DIR}")
-        print(f"  Embedding: {EMBEDDING_MODEL}")
+        print(f"  Gemini Keys : {len(GEMINI_API_KEYS)} key(s) đã nạp (tối đa 8)")
+        print(f"  Router Model   : {GEMINI_ROUTER_MODEL}")
+        print(f"  Synthesis Model: {GEMINI_SYNTHESIS_MODEL}")
+        print(f"  Judge Model    : {GEMINI_JUDGE_MODEL}")
+        print(f"  Fallback Model : {GEMINI_FALLBACK_MODEL}")
+        print(f"  Postgres       : {POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
+        print(f"  ChromaDB       : {CHROMA_PERSIST_DIR}")
+        print(f"  Embedding      : {EMBEDDING_MODEL}")

@@ -107,7 +107,7 @@ def _call_gemini_judge(question: str, ground_truth: str, chatbot_answer: str) ->
         # pyrefly: ignore [missing-import]
         from google import genai
         from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
-        from backend.config import GEMINI_SYNTHESIS_MODEL
+        from backend.config import GEMINI_JUDGE_MODEL  # Model riêng cho việc chấm điểm
 
         prompt = JUDGE_PROMPT_TEMPLATE.format(
             question=question,
@@ -117,7 +117,7 @@ def _call_gemini_judge(question: str, ground_truth: str, chatbot_answer: str) ->
 
         def _call(client: genai.Client) -> str:
             response = client.models.generate_content(
-                model=GEMINI_SYNTHESIS_MODEL,
+                model=GEMINI_JUDGE_MODEL,  # Judge dùng model riêng (có thể chính xác hơn)
                 contents=prompt,
                 config={"temperature": 0.1},
             )

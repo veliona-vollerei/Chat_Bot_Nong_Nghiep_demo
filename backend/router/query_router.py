@@ -23,7 +23,7 @@ import logging
 from typing import Optional
 # pyrefly: ignore [missing-import]
 from google import genai
-from backend.config import GEMINI_ROUTER_MODEL, GEMINI_SYNTHESIS_MODEL
+from backend.config import GEMINI_ROUTER_MODEL, GEMINI_SYNTHESIS_MODEL, GEMINI_FALLBACK_MODEL
 from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
 
 logger = logging.getLogger(__name__)
