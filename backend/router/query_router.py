@@ -85,7 +85,11 @@ YÊU CẦU BẮT BUỘC:
 Trả lời:"""
 
 
-def route_question(question: str, history: Optional[list] = None) -> dict:
+def route_question(
+    question: str,
+    history: Optional[list] = None,
+    conversation_id: Optional[str] = None,
+) -> dict:
     """
     Phân loại câu hỏi bằng Gemini Router.
 
@@ -126,6 +130,17 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
                     "response_mime_type": "application/json",
                 }
             )
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
+                try:
+                    from backend.monitoring import record_gemini_usage
+                    record_gemini_usage(
+                        model=GEMINI_ROUTER_MODEL,
+                        prompt_tokens=getattr(response.usage_metadata, "prompt_token_count", 0) or 0,
+                        candidate_tokens=getattr(response.usage_metadata, "candidates_token_count", 0) or 0,
+                        conversation_id=conversation_id,
+                    )
+                except Exception:
+                    pass
             return response.text.strip()
 
         text = call_with_rotation(_call_router)
@@ -197,7 +212,12 @@ def route_question(question: str, history: Optional[list] = None) -> dict:
         }
 
 
-def synthesize_answer(question: str, data: str, source: str) -> str:
+def synthesize_answer(
+    question: str,
+    data: str,
+    source: str,
+    conversation_id: Optional[str] = None,
+) -> str:
     """
     Dùng Gemini để diễn giải lại dữ liệu thành câu trả lời tự nhiên.
     Tự động xoay vòng key khi gặp lỗi rate limit / quota exceeded.
@@ -216,6 +236,17 @@ def synthesize_answer(question: str, data: str, source: str) -> str:
                 "temperature": 0.2,
             }
         )
+        if hasattr(response, "usage_metadata") and response.usage_metadata:
+            try:
+                from backend.monitoring import record_gemini_usage
+                record_gemini_usage(
+                    model=GEMINI_SYNTHESIS_MODEL,
+                    prompt_tokens=getattr(response.usage_metadata, "prompt_token_count", 0) or 0,
+                    candidate_tokens=getattr(response.usage_metadata, "candidates_token_count", 0) or 0,
+                    conversation_id=conversation_id,
+                )
+            except Exception:
+                pass
         return response.text.strip()
 
     try:

@@ -452,6 +452,102 @@
                 html += `<p style="color:var(--text-muted);font-size:13px">Chưa có tool nào được gọi kể từ khi server khởi động.</p>`;
             }
 
+            // ── Gemini Key Pool (8 slots) ─────────────────────────────────────────
+            const pool = data.gemini_pool || [];
+            if (pool.length > 0) {
+                const activeCount = pool.filter(k => k.status === 'active').length;
+                const rateLimitedCount = pool.filter(k => k.status === 'rate_limited').length;
+                const invalidCount = pool.filter(k => k.status === 'invalid').length;
+                let poolRows = pool.map(k => {
+                    let statusBadge = '<span style="color:#22c55e">🟢 Active</span>';
+                    if (k.status === 'rate_limited') {
+                        statusBadge = `<span style="color:#f59e0b">🟡 Rate-limited (${k.cooldown_remaining_seconds}s)</span>`;
+                    } else if (k.status === 'invalid') {
+                        statusBadge = '<span style="color:#ef4444">🔴 Invalid</span>';
+                    }
+                    const isCurrentBadge = k.is_current ? '<span style="background:rgba(34,197,94,0.2);color:#22c55e;padding:2px 6px;border-radius:4px;font-size:11px">⭐ Đang dùng</span>' : '-';
+                    return `
+                        <tr style="${k.is_current ? 'background:rgba(255,255,255,0.03)' : ''}">
+                            <td style="font-weight:600">KEY_${k.key_index} <code style="font-size:11px;color:var(--text-muted)">${k.key_preview}</code></td>
+                            <td>${statusBadge}</td>
+                            <td>${isCurrentBadge}</td>
+                            <td style="text-align:right">${k.total_calls}</td>
+                            <td style="text-align:right;color:${k.total_errors > 0 ? '#f59e0b' : 'inherit'}">${k.total_errors}</td>
+                            <td style="text-align:right">${k.rotations_caused}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                html += `
+                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                        <h4 style="margin:0;color:var(--accent-gold)">🔑 Trạng Thái Gemini Key Pool (${pool.length} keys)</h4>
+                        <div style="font-size:12px">
+                            <span style="color:#22c55e">🟢 ${activeCount} Active</span> &bull; 
+                            <span style="color:#f59e0b">🟡 ${rateLimitedCount} Cooldown</span> &bull; 
+                            <span style="color:#ef4444">🔴 ${invalidCount} Invalid</span>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px">
+                        <thead><tr style="color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.1)">
+                            <th style="text-align:left;padding:6px">Slot</th>
+                            <th style="text-align:left;padding:6px">Trạng thái</th>
+                            <th style="text-align:left;padding:6px">Hiện tại</th>
+                            <th style="text-align:right;padding:6px">Thành công</th>
+                            <th style="text-align:right;padding:6px">Lỗi</th>
+                            <th style="text-align:right;padding:6px">Xoay vòng</th>
+                        </tr></thead>
+                        <tbody>${poolRows}</tbody>
+                    </table>
+                    </div>
+                </div>`;
+            }
+
+            // ── Gemini Token & Cost Tracking ──────────────────────────────────────
+            const usage = data.gemini_usage;
+            if (usage && (usage.total_calls > 0 || usage.total_tokens > 0)) {
+                const models = Object.entries(usage.by_model || {});
+                let modelRows = models.map(([mName, m]) => `
+                    <tr>
+                        <td style="font-family:monospace;font-size:12px">${mName}</td>
+                        <td style="text-align:right">${m.calls}</td>
+                        <td style="text-align:right">${(m.prompt_tokens||0).toLocaleString()}</td>
+                        <td style="text-align:right">${(m.candidate_tokens||0).toLocaleString()}</td>
+                        <td style="text-align:right;font-weight:600">${(m.total_tokens||0).toLocaleString()}</td>
+                        <td style="text-align:right;color:#60a5fa">$${m.estimated_cost_usd}</td>
+                        <td style="text-align:right;color:#34d399">${m.estimated_cost_vnd.toLocaleString('vi-VN')} đ</td>
+                    </tr>
+                `).join('');
+
+                html += `
+                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:16px;margin-bottom:16px">
+                    <h4 style="margin:0 0 12px 0;color:var(--accent-gold)">💰 Thống Kê Chi Phí & Token Gemini (Ước Tính)</h4>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:14px">
+                        <div><span style="color:var(--text-muted);font-size:12px">Tổng lượt gọi API</span><br><strong style="font-size:16px">${usage.total_calls}</strong></div>
+                        <div><span style="color:var(--text-muted);font-size:12px">Tổng Tokens</span><br><strong style="font-size:16px">${usage.total_tokens.toLocaleString()}</strong></div>
+                        <div><span style="color:var(--text-muted);font-size:12px">Prompt / Output</span><br><span style="font-size:12px">${usage.total_prompt_tokens.toLocaleString()} / ${usage.total_candidate_tokens.toLocaleString()}</span></div>
+                        <div><span style="color:var(--text-muted);font-size:12px">Chi phí (USD)</span><br><strong style="color:#60a5fa;font-size:16px">$${usage.estimated_cost_usd}</strong></div>
+                        <div><span style="color:var(--text-muted);font-size:12px">Quy đổi (VNĐ)</span><br><strong style="color:#34d399;font-size:16px">${usage.estimated_cost_vnd.toLocaleString('vi-VN')} đ</strong></div>
+                    </div>
+                    ${models.length > 0 ? `
+                    <div style="overflow-x:auto">
+                    <table style="width:100%;border-collapse:collapse;font-size:12px">
+                        <thead><tr style="color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.1)">
+                            <th style="text-align:left;padding:6px">Model</th>
+                            <th style="text-align:right;padding:6px">Calls</th>
+                            <th style="text-align:right;padding:6px">Prompt Tokens</th>
+                            <th style="text-align:right;padding:6px">Output Tokens</th>
+                            <th style="text-align:right;padding:6px">Tổng Tokens</th>
+                            <th style="text-align:right;padding:6px">Chi Phí (USD)</th>
+                            <th style="text-align:right;padding:6px">Chi Phí (VNĐ)</th>
+                        </tr></thead>
+                        <tbody>${modelRows}</tbody>
+                    </table>
+                    </div>` : ''}
+                </div>`;
+            }
+
             html += `<p style="color:var(--text-muted);font-size:11px;margin-top:8px">${data.note || ''}</p>`;
             return html;
         }

@@ -571,7 +571,7 @@ async def admin_key_status(username: Optional[str] = None):
     if key_manager is None:
         raise HTTPException(
             status_code=503,
-            detail="GeminiKeyManager chưa khởi tạo. Kiểm tra GEMINI_API_KEY_1..4 trong .env"
+            detail="GeminiKeyManager chưa khởi tạo. Kiểm tra GEMINI_API_KEY_1..8 trong .env"
         )
 
     key_statuses = key_manager.status()
@@ -778,7 +778,8 @@ async def _check_and_record_qe_match(question: str, answer: str):
         from backend.utils.gemini_client import call_with_rotation, AllKeysExhaustedError
         # pyrefly: ignore [missing-import]
         from google import genai as _genai
-        from backend.config import GEMINI_SYNTHESIS_MODEL
+        from backend.config import GEMINI_JUDGE_MODEL
+        from backend.monitoring import record_gemini_usage
 
         judge_prompt = JUDGE_PROMPT_TEMPLATE.format(
             question=best_match["question"],
@@ -788,7 +789,7 @@ async def _check_and_record_qe_match(question: str, answer: str):
 
         def _call_judge(client: _genai.Client) -> str:
             resp = client.models.generate_content(
-                model=GEMINI_SYNTHESIS_MODEL,
+                model=GEMINI_JUDGE_MODEL,
                 contents=judge_prompt,
                 config={
                     "temperature": 0.1,
@@ -796,6 +797,13 @@ async def _check_and_record_qe_match(question: str, answer: str):
                     "response_mime_type": "application/json",
                 },
             )
+            if hasattr(resp, "usage_metadata") and resp.usage_metadata:
+                record_gemini_usage(
+                    model=GEMINI_JUDGE_MODEL,
+                    prompt_tokens=getattr(resp.usage_metadata, "prompt_token_count", 0) or 0,
+                    candidate_tokens=getattr(resp.usage_metadata, "candidates_token_count", 0) or 0,
+                    conversation_id=session_id,
+                )
             return resp.text.strip() if resp.text else ""
 
         judge_raw = await asyncio.to_thread(call_with_rotation, _call_judge)
@@ -1038,11 +1046,12 @@ async def benchmark_run(req: BenchmarkRunRequest, username: Optional[str] = None
 
                 # pyrefly: ignore [missing-import]
                 from google import genai as _genai
-                from backend.config import GEMINI_SYNTHESIS_MODEL
+                from backend.config import GEMINI_JUDGE_MODEL
+                from backend.monitoring import record_gemini_usage
 
                 def _call_judge(client: _genai.Client) -> str:
                     resp = client.models.generate_content(
-                        model=GEMINI_SYNTHESIS_MODEL,
+                        model=GEMINI_JUDGE_MODEL,
                         contents=judge_prompt,
                         config={
                             "temperature": 0.1,
@@ -1050,6 +1059,12 @@ async def benchmark_run(req: BenchmarkRunRequest, username: Optional[str] = None
                             "response_mime_type": "application/json",
                         }
                     )
+                    if hasattr(resp, "usage_metadata") and resp.usage_metadata:
+                        record_gemini_usage(
+                            model=GEMINI_JUDGE_MODEL,
+                            prompt_tokens=getattr(resp.usage_metadata, "prompt_token_count", 0) or 0,
+                            candidate_tokens=getattr(resp.usage_metadata, "candidates_token_count", 0) or 0,
+                        )
                     return resp.text.strip()
 
                 judge_raw = call_with_rotation(_call_judge)
@@ -1398,8 +1413,13 @@ async def chat(request: ChatRequest):
     normalized = normalize_input(question)
     norm_question = normalized["normalized"]
     
-    # ─── Bước 2: Router phân loại (truyền conversation_history) ─
-    routing = await asyncio.to_thread(route_question, norm_question, history=request.conversation_history)
+    # ─── Bước 2: Router phân loại (truyền conversation_history & session_id) ─
+    routing = await asyncio.to_thread(
+        route_question,
+        norm_question,
+        history=request.conversation_history,
+        conversation_id=session_id,
+    )
     question_type = routing.get("question_type", "diễn_giải")
     crop = routing.get("crop") or None  # GĐ1 Mục 1: None nếu không xác định
     season = routing.get("season") or extract_season(norm_question)

@@ -20,17 +20,18 @@ Hệ thống NextFarm Chatbot đã nâng cấp từ kiến trúc 3 tầng (Fact 
 
 ## 2. Kết Quả Kiểm Thử Đơn Vị Tự Động (Unit Tests)
 
-Hệ thống kiểm thử tự động đạt **52/52 tests PASSED (100%)** với thời gian chạy ~1.2 giây:
+Hệ thống kiểm thử tự động đạt **57/57 tests PASSED (100%)** với thời gian chạy ~1.2 giây:
 
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.12.7, pytest-9.1.1, pluggy-1.6.0
-collected 52 items
+collected 57 items
 
-backend/tests/test_chunker.py ....................                     [ 38%]
-backend/tests/test_router.py ................                          [ 69%]
+backend/tests/test_chunker.py ....................                     [ 35%]
+backend/tests/test_monitoring.py .....                                 [ 44%]
+backend/tests/test_router.py ................                          [ 72%]
 backend/tests/test_simulator.py ................                       [100%]
-============================= 52 passed in 1.17s ==============================
+============================= 57 passed in 1.21s ==============================
 ```
 
 - **`test_chunker.py` (20 tests)**:
@@ -181,5 +182,5 @@ Sau khi phân tích 50 câu benchmark, xác định được nguyên nhân:
 | **P1** | `agricultural_factual_qa` chỉ 84% (42/50) | Root cause: corpus gap (không có tài liệu về cao su/xoài/hồ tiêu/cà phê/thanh long). Hành động: xem mục P0 bổ sung corpus ở trên. | ✅ Root cause xác định |
 | **P1** | `fault_injector.py` mới có 4/9 loại lỗi | Thêm: `duplicated_event`, `clock_skew`, `command_failed`. 52/52 tests vẫn PASS. | ✅ Hoàn thành |
 | **P1** | Chưa gắn `data_source` vào sensor/device/irrigation record | Thêm trường `data_source` vào `SensorReading` (open_meteo_driven/fully_synthetic) và `IrrigationEvent` (device_simulated). | ✅ Hoàn thành |
-| **P2** | Chưa có phân tích chi phí (token/cost) theo số lượt hội thoại | Bổ sung log/metric chi phí Gemini API theo conversation trong `monitoring.py`. | 🔲 Việc tiếp theo |
+| **P2** | Chưa có phân tích chi phí (token/cost) theo số lượt hội thoại | Bổ sung log/metric chi phí Gemini API theo model & conversation trong `monitoring.py`, tích hợp vào UI Giám Sát Admin. 57/57 tests PASS. | ✅ Hoàn thành |
 | **P2** | Report này dễ bị lỗi thời mỗi khi rerun | Cân nhắc tự động sinh report từ JSON (script). | 🔲 Tương lai |

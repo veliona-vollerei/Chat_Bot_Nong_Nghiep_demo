@@ -121,6 +121,17 @@ def _call_gemini_judge(question: str, ground_truth: str, chatbot_answer: str) ->
                 contents=prompt,
                 config={"temperature": 0.1},
             )
+            if hasattr(response, "usage_metadata") and response.usage_metadata:
+                try:
+                    from backend.monitoring import record_gemini_usage
+                    record_gemini_usage(
+                        model=GEMINI_JUDGE_MODEL,
+                        prompt_tokens=getattr(response.usage_metadata, "prompt_token_count", 0) or 0,
+                        candidate_tokens=getattr(response.usage_metadata, "candidates_token_count", 0) or 0,
+                        conversation_id="benchmark_evaluator",
+                    )
+                except Exception:
+                    pass
             return response.text.strip()
 
         raw = call_with_rotation(_call)

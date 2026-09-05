@@ -46,6 +46,91 @@ _stale_count  = 0
 _fresh_count  = 0
 _missing_count = 0
 
+# ─── Gemini Token & Cost Tracking (GĐ3 / P2) ──────────────────────────────────
+# Giá USD / 1M tokens (theo biểu giá Google AI Studio pay-as-you-go)
+GEMINI_PRICING_PER_1M = {
+    "gemini-3.1-flash-lite": (0.075, 0.30),
+    "gemini-2.0-flash-lite": (0.075, 0.30),
+    "gemini-2.5-flash-lite": (0.075, 0.30),
+    "gemini-3.6-flash":      (0.10,  0.40),
+    "gemini-2.0-flash":      (0.10,  0.40),
+    "gemini-2.5-flash":      (0.10,  0.40),
+    "gemini-1.5-flash":      (0.075, 0.30),
+    "gemini-2.5-pro":        (1.25,  5.00),
+    "gemini-2.0-pro":        (1.25,  5.00),
+    "gemini-1.5-pro":        (1.25,  5.00),
+}
+DEFAULT_PRICING_PER_1M = (0.10, 0.40)
+USD_TO_VND_RATE = 25400  # Tỷ giá tham chiếu USD -> VND
+
+_gemini_usage = {
+    "total_calls": 0,
+    "total_prompt_tokens": 0,
+    "total_candidate_tokens": 0,
+    "total_tokens": 0,
+    "estimated_cost_usd": 0.0,
+    "estimated_cost_vnd": 0.0,
+    "by_model": defaultdict(lambda: {
+        "calls": 0,
+        "prompt_tokens": 0,
+        "candidate_tokens": 0,
+        "total_tokens": 0,
+        "estimated_cost_usd": 0.0,
+        "estimated_cost_vnd": 0.0,
+    }),
+    "by_conversation": defaultdict(lambda: {
+        "calls": 0,
+        "prompt_tokens": 0,
+        "candidate_tokens": 0,
+        "total_tokens": 0,
+        "estimated_cost_usd": 0.0,
+        "estimated_cost_vnd": 0.0,
+        "last_call_at": None,
+    }),
+}
+
+
+def record_gemini_usage(
+    model: str,
+    prompt_tokens: int = 0,
+    candidate_tokens: int = 0,
+    conversation_id: Optional[str] = None,
+):
+    """
+    Ghi nhận lượng token tiêu thụ và ước tính chi phí cho mỗi lượt gọi Gemini API.
+    """
+    model_clean = model.strip()
+    input_price, output_price = GEMINI_PRICING_PER_1M.get(model_clean, DEFAULT_PRICING_PER_1M)
+
+    call_tokens = prompt_tokens + candidate_tokens
+    cost_usd = (prompt_tokens / 1_000_000.0) * input_price + (candidate_tokens / 1_000_000.0) * output_price
+    cost_vnd = cost_usd * USD_TO_VND_RATE
+
+    _gemini_usage["total_calls"] += 1
+    _gemini_usage["total_prompt_tokens"] += prompt_tokens
+    _gemini_usage["total_candidate_tokens"] += candidate_tokens
+    _gemini_usage["total_tokens"] += call_tokens
+    _gemini_usage["estimated_cost_usd"] += cost_usd
+    _gemini_usage["estimated_cost_vnd"] += cost_vnd
+
+    m = _gemini_usage["by_model"][model_clean]
+    m["calls"] += 1
+    m["prompt_tokens"] += prompt_tokens
+    m["candidate_tokens"] += candidate_tokens
+    m["total_tokens"] += call_tokens
+    m["estimated_cost_usd"] += cost_usd
+    m["estimated_cost_vnd"] += cost_vnd
+
+    if conversation_id:
+        c = _gemini_usage["by_conversation"][conversation_id]
+        c["calls"] += 1
+        c["prompt_tokens"] += prompt_tokens
+        c["candidate_tokens"] += candidate_tokens
+        c["total_tokens"] += call_tokens
+        c["estimated_cost_usd"] += cost_usd
+        c["estimated_cost_vnd"] += cost_vnd
+        c["last_call_at"] = datetime.now().isoformat()
+
 
 def record_tool_call(tool_name: str, farm_id: str, latency_ms: float, success: bool):
     """
@@ -318,6 +403,55 @@ def get_monitoring_stats() -> dict:
         acceptance_stats=acceptance_stats,
     )
 
+    # ── Gemini Key Pool Status ─────────────────────────────────────────────
+    gemini_pool_status = []
+    try:
+        from backend.utils.gemini_client import key_manager
+        if key_manager:
+            gemini_pool_status = key_manager.status()
+    except Exception as e:
+        logger.warning(f"Không lấy được trạng thái Gemini Key Pool: {e}")
+
+    # ── Gemini Usage & Cost Summary ────────────────────────────────────────
+    by_model_dict = {}
+    for m_name, m_data in _gemini_usage["by_model"].items():
+        by_model_dict[m_name] = {
+            "calls": m_data["calls"],
+            "prompt_tokens": m_data["prompt_tokens"],
+            "candidate_tokens": m_data["candidate_tokens"],
+            "total_tokens": m_data["total_tokens"],
+            "estimated_cost_usd": round(m_data["estimated_cost_usd"], 6),
+            "estimated_cost_vnd": round(m_data["estimated_cost_vnd"], 2),
+        }
+
+    # Top 10 conversations by cost
+    sorted_convs = sorted(
+        _gemini_usage["by_conversation"].items(),
+        key=lambda x: x[1]["estimated_cost_usd"],
+        reverse=True
+    )[:10]
+    top_convs = {
+        cid: {
+            "calls": c["calls"],
+            "total_tokens": c["total_tokens"],
+            "estimated_cost_usd": round(c["estimated_cost_usd"], 6),
+            "estimated_cost_vnd": round(c["estimated_cost_vnd"], 2),
+            "last_call_at": c["last_call_at"],
+        }
+        for cid, c in sorted_convs
+    }
+
+    gemini_usage_summary = {
+        "total_calls": _gemini_usage["total_calls"],
+        "total_prompt_tokens": _gemini_usage["total_prompt_tokens"],
+        "total_candidate_tokens": _gemini_usage["total_candidate_tokens"],
+        "total_tokens": _gemini_usage["total_tokens"],
+        "estimated_cost_usd": round(_gemini_usage["estimated_cost_usd"], 6),
+        "estimated_cost_vnd": round(_gemini_usage["estimated_cost_vnd"], 2),
+        "by_model": by_model_dict,
+        "top_conversations": top_convs,
+    }
+
     return {
         "generated_at": datetime.now().isoformat(),
         "alerts": alerts,
@@ -325,11 +459,13 @@ def get_monitoring_stats() -> dict:
         "tool_metrics": tool_stats,
         "iam_stats": iam_stats,
         "sensor_quality": sensor_stats,
+        "gemini_pool": gemini_pool_status,
+        "gemini_usage": gemini_usage_summary,
         "calibration": calibration_stats,
         "acceptance_benchmark": acceptance_stats,
         "llm_judge_benchmark": judge_stats,
         "note": (
-            "Các metric tool/iam/sensor là in-memory (reset khi server restart). "
+            "Các metric tool/iam/sensor/gemini_usage là in-memory (reset khi server restart). "
             "calibration và acceptance_benchmark đọc từ file JSON."
         ),
     }
