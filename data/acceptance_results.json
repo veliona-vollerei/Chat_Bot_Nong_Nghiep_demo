@@ -1,13 +1,13 @@
 {
   "total_questions": 260,
-  "total_passed": 260,
-  "total_failed": 0,
-  "overall_accuracy_pct": 100.0,
+  "total_passed": 218,
+  "total_failed": 42,
+  "overall_accuracy_pct": 83.8,
   "iam_cross_farm_leaks": 0,
   "tool_selection_accuracy_pct": 100.0,
-  "p50_latency_ms": 0.0,
-  "p90_latency_ms": 0.0,
-  "p95_latency_ms": 0.0,
+  "p50_latency_ms": 0.6,
+  "p90_latency_ms": 1739.7,
+  "p95_latency_ms": 2693.3,
   "metrics_by_category": {
     "latest_sensor": {
       "total": 30,
@@ -28,60 +28,157 @@
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 2202.8
     },
     "irrigation_schedule": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 1218.9
     },
     "missing_stale_sensor": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 0.4
     },
     "unauthorized_cross_farm": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 0.1
     },
     "agricultural_factual_qa": {
       "total": 50,
-      "passed": 50,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "passed": 8,
+      "failed": 42,
+      "accuracy_pct": 16.0,
+      "avg_latency_ms": 5054.3
     },
     "no_answer_hallucination_guard": {
       "total": 30,
       "passed": 30,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 75.4
     },
     "vietnamese_typo_robustness": {
       "total": 30,
       "passed": 30,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 0.1
     },
     "multi_turn_context": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
+      "avg_latency_ms": 0.2
     }
   },
-  "evaluated_at": "2026-09-05T14:50:13.601302",
-  "status": "ACCEPTED",
-  "evaluation_mode": "schema_check_only",
-  "judge_stats": null
+  "evaluated_at": "2026-09-06T01:27:55.636059",
+  "status": "REJECTED",
+  "evaluation_mode": "full_flow",
+  "judge_stats": {
+    "total_judged": 80,
+    "avg_factual_score": 15.0,
+    "avg_semantic_score": 15.3,
+    "pass_threshold": 60,
+    "details": [
+      {
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Xác định chính xác dữ liệu trong tài liệu nguồn không chứa thông tin đáp ứng câu hỏi.",
+        "generation_note": "Diễn đạt rõ ràng, lịch sự, tuân thủ nguyên tắc không bịa đặt số liệu khi không có thông tin.",
+        "reasoning": "Chatbot xử lý đúng theo đáp án chuẩn khi chủ động từ chối trả lời do thiếu dữ liệu, đảm bảo tính chính xác và không bịa đặt.",
+        "q_id": "factual_001",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Truy xuất chính xác dữ liệu hiện có và nhận biết đúng sự thiếu hụt thông tin cụ thể về đất phèn nhẹ.",
+        "generation_note": "Diễn đạt cẩn trọng, trung thực, phân biệt rõ giữa số liệu chung và điều kiện cụ thể được truy vấn.",
+        "reasoning": "Chatbot tuân thủ hoàn hảo yêu cầu khi từ chối bịa đặt số liệu không có sẵn, đồng thời cung cấp thông tin tham khảo kèm cảnh báo rõ ràng.",
+        "q_id": "factual_002",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Trích xuất thành công thông tin liên quan đến giống thanh long TL5 và nhận diện đúng sự thiếu hụt dữ liệu về đất cát pha vụ Thu Đông.",
+        "generation_note": "Tổng hợp thông tin mạch lạc, trung thực, trả lời đúng trọng tâm và chủ động báo không có dữ liệu thay vì bịa đặt.",
+        "reasoning": "Chatbot đáp ứng hoàn hảo yêu cầu của đáp án chuẩn: cung cấp thông tin trung thực từ tài liệu và từ chối trả lời chính xác đối với phần dữ liệu không có trong hệ thống.",
+        "q_id": "factual_003",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Xác định đúng tài liệu hiện có không bao hàm thông tin tưới nước cho lúa giai đoạn đẻ nhánh.",
+        "generation_note": "Phản hồi trung thực, diễn đạt rõ ràng, lịch sự và tuân thủ nguyên tắc không tự bịa đặt thông tin.",
+        "reasoning": "Chatbot hoàn thành tốt yêu cầu khi trung thực từ chối trả lời do thiếu dữ liệu theo đúng hướng dẫn của Đáp án chuẩn.",
+        "q_id": "factual_004",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 95.0,
+        "retrieval_note": "Hệ thống xác định chính xác việc không tìm thấy dữ liệu riêng cho cây cao su trong tài liệu nguồn.",
+        "generation_note": "Trả lời minh bạch về việc thiếu dữ liệu, không bịa đặt thông tin và trình bày các biện pháp phòng trừ chung một cách khoa học.",
+        "reasoning": "Chatbot tuân thủ đúng yêu cầu không tự bịa số liệu/thông tin khi không có dữ liệu về cây cao su, đồng thời tổng hợp thông tin tham khảo có sẵn một cách rõ ràng.",
+        "q_id": "factual_005",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 95.0,
+        "retrieval_note": "Trích xuất chính xác thông tin sẵn có trong tài liệu và nhận biết được sự thiếu hụt dữ liệu về vụ Thu Đông.",
+        "generation_note": "Diễn đạt rõ ràng, trung thực, thẳng thắn báo không có dữ liệu thay vì tự bịa đặt thông tin.",
+        "reasoning": "Chatbot đáp ứng hoàn toàn yêu cầu của đáp án chuẩn khi cung cấp thông tin liên quan và chủ động từ chối trả lời do không có dữ liệu cụ thể về vụ Thu Đông.",
+        "q_id": "factual_006",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Hệ thống xác định chính xác tài liệu truy xuất không chứa thông tin về độ pH đất cho cây thanh long.",
+        "generation_note": "Diễn đạt trung thực, minh bạch, tuân thủ đúng nguyên tắc từ chối trả lời khi không có dữ liệu.",
+        "reasoning": "Chatbot thực hiện đúng yêu cầu của Ground Truth là không bịa đặt số liệu và chủ động từ chối trả lời khi tài liệu đầu vào không có thông tin.",
+        "q_id": "factual_007",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 50.0,
+        "semantic_score": 75.0,
+        "retrieval_note": "Hệ thống truy xuất nhầm nguồn tài liệu không liên quan (tập huấn lúa, cà phê) để trả lời về cây sầu riêng.",
+        "generation_note": "Trình bày rõ ràng, có số liệu cụ thể và cấu trúc dễ hiểu nhưng độ tin cậy của thông số không cao do nguồn sai.",
+        "reasoning": "Câu trả lời bám sát chủ đề tưới nước giai đoạn ra hoa, tuy nhiên việc trích dẫn dữ liệu từ tài liệu lúa/cà phê khiến các số liệu kỹ thuật cho sầu riêng không đảm bảo độ chính xác nông học.",
+        "q_id": "factual_008",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 0.0,
+        "semantic_score": 0.0,
+        "retrieval_note": "Judge error: Tất cả 4 Gemini API key đều không khả dụng (rate_limited / invalid). Vui lòng thêm key mới hoặc chờ.",
+        "generation_note": "",
+        "reasoning": "",
+        "q_id": "factual_009",
+        "category": "agricultural_factual_qa"
+      },
+      {
+        "factual_score": 0.0,
+        "semantic_score": 0.0,
+        "retrieval_note": "Judge error: Tất cả 4 Gemini API key đều không khả dụng (rate_limited / invalid). Vui lòng thêm key mới hoặc chờ.",
+        "generation_note": "",
+        "reasoning": "",
+        "q_id": "factual_010",
+        "category": "agricultural_factual_qa"
+      }
+    ]
+  }
 }
