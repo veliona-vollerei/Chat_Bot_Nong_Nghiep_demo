@@ -43,7 +43,7 @@ def _compute_quality_flag(measured_at: Optional[datetime]) -> dict:
         }
     """
     if measured_at is None:
-        return {
+        result = {
             "quality_flag": "missing",
             "age_seconds": None,
             "age_human": "Không có dữ liệu",
@@ -52,6 +52,12 @@ def _compute_quality_flag(measured_at: Optional[datetime]) -> dict:
                 "Thiết bị có thể offline hoặc chưa có phép đo nào."
             ),
         }
+        try:
+            from backend.monitoring import record_sensor_quality
+            record_sensor_quality("missing")
+        except Exception:
+            pass
+        return result
 
     now = datetime.now(timezone.utc)
     if measured_at.tzinfo is None:
@@ -73,6 +79,11 @@ def _compute_quality_flag(measured_at: Optional[datetime]) -> dict:
         age_human = f"{age_seconds // 86400} ngày"
 
     if age_seconds <= FRESH_THRESHOLD_SECONDS:
+        try:
+            from backend.monitoring import record_sensor_quality
+            record_sensor_quality("fresh")
+        except Exception:
+            pass
         return {
             "quality_flag": "fresh",
             "age_seconds": age_seconds,
@@ -80,6 +91,11 @@ def _compute_quality_flag(measured_at: Optional[datetime]) -> dict:
             "freshness_warning": None,
         }
     elif age_seconds <= STALE_THRESHOLD_SECONDS:
+        try:
+            from backend.monitoring import record_sensor_quality
+            record_sensor_quality("stale")
+        except Exception:
+            pass
         return {
             "quality_flag": "stale",
             "age_seconds": age_seconds,
@@ -90,6 +106,11 @@ def _compute_quality_flag(measured_at: Optional[datetime]) -> dict:
             ),
         }
     else:
+        try:
+            from backend.monitoring import record_sensor_quality
+            record_sensor_quality("missing")
+        except Exception:
+            pass
         return {
             "quality_flag": "missing",
             "age_seconds": age_seconds,
@@ -180,6 +201,12 @@ def _log_tool_call(tool_name: str, farm_id: str, latency_ms: float, success: boo
     logger.info(
         f"TOOL_CALL [{status}] tool={tool_name} farm={farm_id} latency={latency_ms:.1f}ms"
     )
+    # Push metric vào monitoring module (non-blocking, best-effort)
+    try:
+        from backend.monitoring import record_tool_call
+        record_tool_call(tool_name, farm_id, latency_ms, success)
+    except Exception:
+        pass
 
 
 def get_latest_sensor(

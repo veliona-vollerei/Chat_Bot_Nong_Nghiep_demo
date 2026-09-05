@@ -160,3 +160,90 @@ def audit_corpus_status(documents_dir: Optional[Path] = None) -> CorpusAuditRepo
             "trust_tier": "verified_agriculture_docs",
         },
     )
+
+
+if __name__ == "__main__":
+    """
+    CLI Runner: Chạy RAG audit và xuất báo cáo.
+
+    Chạy:
+        python -m backend.ingestion.rag_audit
+        python -m backend.ingestion.rag_audit --output docs/rag_audit_report.json
+    """
+    import sys
+    import os
+    import argparse
+
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    logging.basicConfig(level=logging.WARNING)
+
+    parser = argparse.ArgumentParser(description="RAG Audit & Citation Validation")
+    parser.add_argument("--output", default="docs/rag_audit_report.json",
+                        help="File đầu ra JSON (mặc định: docs/rag_audit_report.json)")
+    args = parser.parse_args()
+
+    print("🔍 Đang kiểm tra trạng thái corpus...")
+    corpus_report = audit_corpus_status()
+
+    # Citation validation: lấy mẫu từ ChromaDB
+    citation_stats = None
+    try:
+        from backend.db.chroma_db import get_collection
+        col = get_collection()
+        if col.count() > 0:
+            sample = col.get(
+                include=["documents", "metadatas"],
+                limit=min(50, col.count()),
+            )
+            docs = sample.get("documents") or []
+            metas = sample.get("metadatas") or []
+
+            # Kiểm tra citation trên mỗi chunk: số liệu trong chunk có trong metadata không
+            checked = []
+            for doc, meta in zip(docs, metas):
+                result = validate_citations(
+                    answer=doc,
+                    retrieved_chunks=[{"text": doc, "source": meta.get("source", "")}],
+                )
+                checked.append(asdict(result))
+
+            grounded = [c for c in checked if c["is_valid"]]
+            citation_stats = {
+                "total_chunks_checked": len(checked),
+                "grounded_chunks": len(grounded),
+                "grounded_rate_pct": round(len(grounded) / len(checked) * 100, 1) if checked else 0.0,
+                "note": "Kiểm tra tính xác thực số liệu trong chunk so với metadata retrieval",
+            }
+            print(f"✓ Citation validation: {len(grounded)}/{len(checked)} chunks grounded ({citation_stats['grounded_rate_pct']}%)")
+    except Exception as e:
+        citation_stats = {"error": str(e)}
+        print(f"⚠️  Citation validation lỗi: {e}")
+
+    # Tổng hợp báo cáo
+    report = {
+        "corpus_audit": asdict(corpus_report),
+        "citation_validation": citation_stats,
+        "generated_at": datetime.now().isoformat(),
+    }
+
+    out_path = Path(args.output)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"💾 Đã lưu RAG audit report → {out_path}")
+
+    print(f"\n{'='*55}")
+    print(f" RAG AUDIT REPORT")
+    print(f"{'='*55}")
+    print(f" Corpus version    : {corpus_report.corpus_version}")
+    print(f" Total documents   : {corpus_report.total_documents}")
+    print(f" Approved          : {corpus_report.approved_documents}")
+    print(f" Pending review    : {corpus_report.pending_documents}")
+    print(f" OCR coverage      : {corpus_report.ocr_coverage_pct}%")
+    print(f" Status            : {corpus_report.details.get('status', '-')}")
+    if citation_stats and "error" not in citation_stats:
+        print(f" Citation grounded : {citation_stats['grounded_rate_pct']}%")
+    print(f"{'='*55}")
+

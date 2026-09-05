@@ -1,0 +1,26 @@
+{
+  "reports": [
+    {
+      "doc_id": "doc_4617aaa39007bb3e",
+      "title": "anqua_sonla.pdf",
+      "total_chunks": 462,
+      "good_chunks": 451,
+      "short_chunks": 11,
+      "empty_chunks": 0,
+      "coverage_pct": 97.6,
+      "recommendation": "ok"
+    },
+    {
+      "doc_id": "doc_9c7735678ea66c58",
+      "title": "tai-lieu-5-2024-tap-huan-kn-lua-caphe.pdf",
+      "total_chunks": 290,
+      "good_chunks": 283,
+      "short_chunks": 7,
+      "empty_chunks": 0,
+      "coverage_pct": 97.6,
+      "recommendation": "ok"
+    }
+  ],
+  "generated_at": "2026-09-05T14:29:53.017342",
+  "total_docs": 2
+}

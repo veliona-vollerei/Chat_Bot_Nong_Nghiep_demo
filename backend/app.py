@@ -1141,6 +1141,60 @@ async def health_check():
     }
 
 
+# ─── Monitoring & Stats Endpoints ─────────────────────────────────────────────
+
+@app.get("/api/monitoring/stats")
+async def monitoring_stats(username: Optional[str] = None):
+    """
+    Lấy toàn bộ metric giám sát vận hành hệ thống:
+    - Tool failure rate, latency p95 từng tool
+    - IAM cross-farm deny rate và log gần nhất
+    - Sensor quality distribution (fresh/stale/missing)
+    - Calibration results (từ calibration_results.json)
+    - Acceptance benchmark status (từ acceptance_results.json)
+
+    Yêu cầu quyền admin.
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    try:
+        from backend.monitoring import get_monitoring_stats
+        stats = get_monitoring_stats()
+        return stats
+    except Exception as e:
+        logger.error(f"monitoring_stats error: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi thu thập metric: {e}")
+
+
+@app.get("/api/monitoring/audit_log")
+async def monitoring_audit_log(username: Optional[str] = None, limit: int = 50):
+    """
+    Lấy log audit các lần cross-farm bị chặn (IAM deny).
+    Log này không thể bị xóa qua API — đảm bảo tính toàn vẹn kiểm toán.
+    Yêu cầu quyền admin.
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    try:
+        from backend.monitoring import _cross_farm_denies, _iam_total_checks, _iam_deny_count
+        return {
+            "total_iam_checks": _iam_total_checks,
+            "total_deny_count": _iam_deny_count,
+            "deny_rate_pct": round(_iam_deny_count / _iam_total_checks * 100, 1) if _iam_total_checks else 0.0,
+            "recent_denies": _cross_farm_denies[-limit:],
+            "note": "Log này không thể xóa qua API. In-memory — reset khi server restart.",
+        }
+    except Exception as e:
+        logger.error(f"monitoring_audit_log error: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi đọc audit log: {e}")
+
+
 # ─── Chat Endpoint ────────────────────────────────────────────
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):

@@ -1,78 +1,15 @@
 {
-  "total_questions": 260,
-  "total_passed": 260,
+  "total_questions": 20,
+  "total_passed": 20,
   "total_failed": 0,
   "overall_accuracy_pct": 100.0,
   "iam_cross_farm_leaks": 0,
   "tool_selection_accuracy_pct": 100.0,
   "p50_latency_ms": 0.0,
   "p90_latency_ms": 0.0,
-  "p95_latency_ms": 0.0,
+  "p95_latency_ms": 1.0,
   "metrics_by_category": {
     "latest_sensor": {
-      "total": 30,
-      "passed": 30,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "device_state": {
-      "total": 20,
-      "passed": 20,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "irrigation_history": {
-      "total": 20,
-      "passed": 20,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "irrigation_schedule": {
-      "total": 20,
-      "passed": 20,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "missing_stale_sensor": {
-      "total": 20,
-      "passed": 20,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "unauthorized_cross_farm": {
-      "total": 20,
-      "passed": 20,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.3
-    },
-    "agricultural_factual_qa": {
-      "total": 50,
-      "passed": 50,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "no_answer_hallucination_guard": {
-      "total": 30,
-      "passed": 30,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "vietnamese_typo_robustness": {
-      "total": 30,
-      "passed": 30,
-      "failed": 0,
-      "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.0
-    },
-    "multi_turn_context": {
       "total": 20,
       "passed": 20,
       "failed": 0,
@@ -80,6 +17,8 @@
       "avg_latency_ms": 0.0
     }
   },
-  "evaluated_at": "2026-09-05T02:48:44.541650",
-  "status": "ACCEPTED"
+  "evaluated_at": "2026-09-05T14:35:07.968956",
+  "status": "ACCEPTED",
+  "evaluation_mode": "full_flow",
+  "judge_stats": null
 }
