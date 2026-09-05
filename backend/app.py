@@ -751,7 +751,7 @@ def _is_question_match(user_q: str, qe_q: str) -> tuple[bool, float]:
     return False, ratio
 
 
-async def _check_and_record_qe_match(question: str, answer: str):
+async def _check_and_record_qe_match(question: str, answer: str, session_id: Optional[str] = None):
     """
     Background: nếu câu hỏi của user trùng với một câu trong Q&E.txt,
     tự động chấm điểm duy nhất cho câu trùng đó và lưu kết quả.
@@ -802,7 +802,7 @@ async def _check_and_record_qe_match(question: str, answer: str):
                     model=GEMINI_JUDGE_MODEL,
                     prompt_tokens=getattr(resp.usage_metadata, "prompt_token_count", 0) or 0,
                     candidate_tokens=getattr(resp.usage_metadata, "candidates_token_count", 0) or 0,
-                    conversation_id=session_id,
+                    conversation_id=session_id or "qe_match",
                 )
             return resp.text.strip() if resp.text else ""
 
@@ -845,7 +845,7 @@ async def _check_and_record_qe_match(question: str, answer: str):
         logger.warning(f"Benchmark auto-check lỗi (không ảnh hưởng chat): {e}")
 
 
-def _enqueue_benchmark_check(question: str, answer: str):
+def _enqueue_benchmark_check(question: str, answer: str, session_id: Optional[str] = None):
     """
     GĐ1 Mục 10: Ghi benchmark job vào DB thay vì asyncio.create_task.
     Durable: không mất task khi worker restart.
@@ -872,7 +872,7 @@ def _enqueue_benchmark_check(question: str, answer: str):
         logger.debug(f"Benchmark job enqueued: {job_id}")
 
         # Vẫn chạy async ngay để không trễ (ưu tiên speed hơn durability trong PoC)
-        asyncio.create_task(_check_and_record_qe_match(question, answer))
+        asyncio.create_task(_check_and_record_qe_match(question, answer, session_id=session_id))
 
     except Exception as e:
         logger.warning(f"_enqueue_benchmark_check DB error, falling back to create_task: {e}")
@@ -1646,10 +1646,10 @@ async def chat(request: ChatRequest):
 
     # ─── Ghi nhận ngầm nếu câu hỏi trùng với Q&E.txt ───
     try:
-        _enqueue_benchmark_check(question, final_answer)
+        _enqueue_benchmark_check(question, final_answer, session_id=session_id)
     except Exception as _be:
         logger.warning(f"Benchmark enqueue lỗi (không ảnh hưởng chat): {_be}")
-        asyncio.create_task(_check_and_record_qe_match(question, final_answer))
+        asyncio.create_task(_check_and_record_qe_match(question, final_answer, session_id=session_id))
 
     return ChatResponse(
         session_id=session_id,
