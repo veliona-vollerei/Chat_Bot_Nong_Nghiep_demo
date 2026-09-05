@@ -1,13 +1,13 @@
 {
   "total_questions": 260,
-  "total_passed": 218,
-  "total_failed": 42,
-  "overall_accuracy_pct": 83.8,
+  "total_passed": 252,
+  "total_failed": 8,
+  "overall_accuracy_pct": 96.9,
   "iam_cross_farm_leaks": 0,
   "tool_selection_accuracy_pct": 100.0,
-  "p50_latency_ms": 0.6,
-  "p90_latency_ms": 1739.7,
-  "p95_latency_ms": 2693.3,
+  "p50_latency_ms": 1.0,
+  "p90_latency_ms": 15477.1,
+  "p95_latency_ms": 24584.6,
   "metrics_by_category": {
     "latest_sensor": {
       "total": 30,
@@ -28,42 +28,42 @@
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 2202.8
+      "avg_latency_ms": 2293.4
     },
     "irrigation_schedule": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 1218.9
+      "avg_latency_ms": 2462.8
     },
     "missing_stale_sensor": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.4
+      "avg_latency_ms": 0.0
     },
     "unauthorized_cross_farm": {
       "total": 20,
       "passed": 20,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 0.1
+      "avg_latency_ms": 0.2
     },
     "agricultural_factual_qa": {
       "total": 50,
-      "passed": 8,
-      "failed": 42,
-      "accuracy_pct": 16.0,
-      "avg_latency_ms": 5054.3
+      "passed": 42,
+      "failed": 8,
+      "accuracy_pct": 84.0,
+      "avg_latency_ms": 17162.1
     },
     "no_answer_hallucination_guard": {
       "total": 30,
       "passed": 30,
       "failed": 0,
       "accuracy_pct": 100.0,
-      "avg_latency_ms": 75.4
+      "avg_latency_ms": 76.3
     },
     "vietnamese_typo_robustness": {
       "total": 30,
@@ -80,102 +80,102 @@
       "avg_latency_ms": 0.2
     }
   },
-  "evaluated_at": "2026-09-06T01:27:55.636059",
-  "status": "REJECTED",
+  "evaluated_at": "2026-09-06T01:48:30.531250",
+  "status": "ACCEPTED",
   "evaluation_mode": "full_flow",
   "judge_stats": {
     "total_judged": 80,
-    "avg_factual_score": 15.0,
-    "avg_semantic_score": 15.3,
+    "avg_factual_score": 81.6,
+    "avg_semantic_score": 79.6,
     "pass_threshold": 60,
     "details": [
       {
         "factual_score": 100.0,
         "semantic_score": 100.0,
-        "retrieval_note": "Xác định chính xác dữ liệu trong tài liệu nguồn không chứa thông tin đáp ứng câu hỏi.",
-        "generation_note": "Diễn đạt rõ ràng, lịch sự, tuân thủ nguyên tắc không bịa đặt số liệu khi không có thông tin.",
-        "reasoning": "Chatbot xử lý đúng theo đáp án chuẩn khi chủ động từ chối trả lời do thiếu dữ liệu, đảm bảo tính chính xác và không bịa đặt.",
+        "retrieval_note": "Chatbot kiểm tra chính xác tài liệu nguồn và xác định không có dữ liệu cho câu hỏi.",
+        "generation_note": "Diễn đạt rõ ràng, trung thực, giải thích cụ thể lý do không thể trả lời.",
+        "reasoning": "Chatbot tuân thủ hoàn hảo đáp án chuẩn khi từ chối trả lời do thiếu dữ liệu và không bịa đặt thông tin.",
         "q_id": "factual_001",
         "category": "agricultural_factual_qa"
       },
       {
         "factual_score": 100.0,
         "semantic_score": 100.0,
-        "retrieval_note": "Truy xuất chính xác dữ liệu hiện có và nhận biết đúng sự thiếu hụt thông tin cụ thể về đất phèn nhẹ.",
-        "generation_note": "Diễn đạt cẩn trọng, trung thực, phân biệt rõ giữa số liệu chung và điều kiện cụ thể được truy vấn.",
-        "reasoning": "Chatbot tuân thủ hoàn hảo yêu cầu khi từ chối bịa đặt số liệu không có sẵn, đồng thời cung cấp thông tin tham khảo kèm cảnh báo rõ ràng.",
+        "retrieval_note": "Trích xuất đúng dữ liệu hiện có và nhận biết chính xác việc thiếu thông tin về đất phèn nhẹ.",
+        "generation_note": "Diễn đạt minh bạch, trung thực, đưa ra số liệu tham khảo kèm lưu ý rõ ràng đúng theo định hướng của đáp án chuẩn.",
+        "reasoning": "Chatbot đã tuân thủ hoàn hảo yêu cầu khi không bịa đặt số liệu, từ chối trả lời trực tiếp do thiếu dữ liệu về đất phèn nhẹ và chủ động đưa ra thông tin tham khảo kèm cảnh báo phù hợp.",
         "q_id": "factual_002",
         "category": "agricultural_factual_qa"
       },
       {
         "factual_score": 100.0,
-        "semantic_score": 100.0,
-        "retrieval_note": "Trích xuất thành công thông tin liên quan đến giống thanh long TL5 và nhận diện đúng sự thiếu hụt dữ liệu về đất cát pha vụ Thu Đông.",
-        "generation_note": "Tổng hợp thông tin mạch lạc, trung thực, trả lời đúng trọng tâm và chủ động báo không có dữ liệu thay vì bịa đặt.",
-        "reasoning": "Chatbot đáp ứng hoàn hảo yêu cầu của đáp án chuẩn: cung cấp thông tin trung thực từ tài liệu và từ chối trả lời chính xác đối với phần dữ liệu không có trong hệ thống.",
+        "semantic_score": 90.0,
+        "retrieval_note": "Hệ thống nhận diện đúng việc không có dữ liệu cụ thể cho đất cát pha vụ Thu Đông và lấy thông tin giống TL5 có trong tài liệu.",
+        "generation_note": "Diễn đạt trung thực, đưa ra lời từ chối/cảnh báo rõ ràng trước khi cung cấp thông tin tham khảo, không bịa đặt số liệu.",
+        "reasoning": "Chatbot tuân thủ đúng định hướng của đáp án chuẩn là từ chối trả lời chính xác khi thiếu dữ liệu, đồng thời trình bày các thông tin liên quan một cách minh bạch và chuẩn xác.",
         "q_id": "factual_003",
         "category": "agricultural_factual_qa"
       },
       {
         "factual_score": 100.0,
         "semantic_score": 100.0,
-        "retrieval_note": "Xác định đúng tài liệu hiện có không bao hàm thông tin tưới nước cho lúa giai đoạn đẻ nhánh.",
-        "generation_note": "Phản hồi trung thực, diễn đạt rõ ràng, lịch sự và tuân thủ nguyên tắc không tự bịa đặt thông tin.",
-        "reasoning": "Chatbot hoàn thành tốt yêu cầu khi trung thực từ chối trả lời do thiếu dữ liệu theo đúng hướng dẫn của Đáp án chuẩn.",
+        "retrieval_note": "Hệ thống xác định chính xác tài liệu không chứa thông tin về tưới nước cho lúa giai đoạn đẻ nhánh.",
+        "generation_note": "Diễn đạt lịch sự, rõ ràng và tuân thủ nguyên tắc từ chối trả lời khi không có dữ liệu.",
+        "reasoning": "Chatbot đã trả lời đúng theo yêu cầu của đáp án chuẩn là từ chối trả lời khi thiếu dữ liệu, không bịa đặt thông tin.",
         "q_id": "factual_004",
         "category": "agricultural_factual_qa"
       },
       {
-        "factual_score": 100.0,
-        "semantic_score": 95.0,
-        "retrieval_note": "Hệ thống xác định chính xác việc không tìm thấy dữ liệu riêng cho cây cao su trong tài liệu nguồn.",
-        "generation_note": "Trả lời minh bạch về việc thiếu dữ liệu, không bịa đặt thông tin và trình bày các biện pháp phòng trừ chung một cách khoa học.",
-        "reasoning": "Chatbot tuân thủ đúng yêu cầu không tự bịa số liệu/thông tin khi không có dữ liệu về cây cao su, đồng thời tổng hợp thông tin tham khảo có sẵn một cách rõ ràng.",
+        "factual_score": 90.0,
+        "semantic_score": 75.0,
+        "retrieval_note": "Hệ thống truy xuất nhầm tài liệu về cây ăn quả Sơn La (anqua_sonla.pdf) thay vì tài liệu chuyên biệt về cây cao su.",
+        "generation_note": "Trình bày rõ ràng, mạch lạc; trung thực thừa nhận không có dữ liệu riêng cho cây cao su và không tự bịa đặt số liệu.",
+        "reasoning": "Chatbot tuân thủ tốt nguyên tắc không bịa đặt khi thiếu thông tin, tuy nhiên do dữ liệu truy xuất không đúng đối tượng cây cao su nên câu trả lời chỉ dừng lại ở mức cung cấp biện pháp chung.",
         "q_id": "factual_005",
         "category": "agricultural_factual_qa"
       },
       {
         "factual_score": 100.0,
-        "semantic_score": 95.0,
-        "retrieval_note": "Trích xuất chính xác thông tin sẵn có trong tài liệu và nhận biết được sự thiếu hụt dữ liệu về vụ Thu Đông.",
-        "generation_note": "Diễn đạt rõ ràng, trung thực, thẳng thắn báo không có dữ liệu thay vì tự bịa đặt thông tin.",
-        "reasoning": "Chatbot đáp ứng hoàn toàn yêu cầu của đáp án chuẩn khi cung cấp thông tin liên quan và chủ động từ chối trả lời do không có dữ liệu cụ thể về vụ Thu Đông.",
+        "semantic_score": 100.0,
+        "retrieval_note": "Không tìm thấy dữ liệu về thông tin sầu riêng vụ Thu Đông trong các tài liệu hiện có.",
+        "generation_note": "Chatbot trả lời minh bạch, thành thật từ chối khi thiếu dữ liệu và có dẫn chứng nguồn rõ ràng.",
+        "reasoning": "Chatbot đã thực hiện đúng nguyên tắc không bịa đặt thông tin và từ chối trả lời chuẩn xác khi hệ thống không có dữ liệu tương ứng.",
         "q_id": "factual_006",
         "category": "agricultural_factual_qa"
       },
       {
         "factual_score": 100.0,
-        "semantic_score": 100.0,
-        "retrieval_note": "Hệ thống xác định chính xác tài liệu truy xuất không chứa thông tin về độ pH đất cho cây thanh long.",
-        "generation_note": "Diễn đạt trung thực, minh bạch, tuân thủ đúng nguyên tắc từ chối trả lời khi không có dữ liệu.",
-        "reasoning": "Chatbot thực hiện đúng yêu cầu của Ground Truth là không bịa đặt số liệu và chủ động từ chối trả lời khi tài liệu đầu vào không có thông tin.",
+        "semantic_score": 95.0,
+        "retrieval_note": "Hệ thống xác định chính xác tài liệu hiện có không chứa thông tin pH đất phù hợp cho thanh long.",
+        "generation_note": "Diễn đạt trung thực, minh bạch, từ chối trả lời đúng theo quy định khi thiếu dữ liệu.",
+        "reasoning": "Chatbot thực hiện tốt nguyên tắc không bịa đặt thông tin khi không có dữ liệu, phản hồi trung thực và giải thích rõ lý do.",
         "q_id": "factual_007",
         "category": "agricultural_factual_qa"
       },
       {
-        "factual_score": 50.0,
-        "semantic_score": 75.0,
-        "retrieval_note": "Hệ thống truy xuất nhầm nguồn tài liệu không liên quan (tập huấn lúa, cà phê) để trả lời về cây sầu riêng.",
-        "generation_note": "Trình bày rõ ràng, có số liệu cụ thể và cấu trúc dễ hiểu nhưng độ tin cậy của thông số không cao do nguồn sai.",
-        "reasoning": "Câu trả lời bám sát chủ đề tưới nước giai đoạn ra hoa, tuy nhiên việc trích dẫn dữ liệu từ tài liệu lúa/cà phê khiến các số liệu kỹ thuật cho sầu riêng không đảm bảo độ chính xác nông học.",
+        "factual_score": 60.0,
+        "semantic_score": 65.0,
+        "retrieval_note": "Dữ liệu truy xuất từ các tài liệu không chuyên biệt cho sầu riêng (lúa, cà phê, cây ăn quả Sơn La).",
+        "generation_note": "Trình bày cấu trúc rõ ràng, có lưu ý điều chỉnh nhưng số liệu áp dụng chưa đúng quy trình nông học của sầu riêng giai đoạn ra hoa.",
+        "reasoning": "Chatbot đã tổng hợp số liệu từ dữ liệu được cung cấp nhưng do nguồn tài liệu trích dẫn không phù hợp nên thông tin tưới nước cho sầu riêng ra hoa chưa thực sự chính xác.",
         "q_id": "factual_008",
         "category": "agricultural_factual_qa"
       },
       {
-        "factual_score": 0.0,
-        "semantic_score": 0.0,
-        "retrieval_note": "Judge error: Tất cả 4 Gemini API key đều không khả dụng (rate_limited / invalid). Vui lòng thêm key mới hoặc chờ.",
-        "generation_note": "",
-        "reasoning": "",
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Hệ thống xác định chính xác việc không có dữ liệu về kỹ thuật làm đất cho cà phê trong tài liệu.",
+        "generation_note": "Diễn đạt rõ ràng, trung thực, từ chối trả lời đúng theo quy định khi không có thông tin.",
+        "reasoning": "Chatbot đã thực hiện đúng yêu cầu của Ground Truth là từ chối trả lời khi không có dữ liệu, tránh việc bịa đặt thông tin nông học.",
         "q_id": "factual_009",
         "category": "agricultural_factual_qa"
       },
       {
-        "factual_score": 0.0,
-        "semantic_score": 0.0,
-        "retrieval_note": "Judge error: Tất cả 4 Gemini API key đều không khả dụng (rate_limited / invalid). Vui lòng thêm key mới hoặc chờ.",
-        "generation_note": "",
-        "reasoning": "",
+        "factual_score": 100.0,
+        "semantic_score": 100.0,
+        "retrieval_note": "Hệ thống nhận diện chính xác việc không có dữ liệu về phân bón cho cây hồ tiêu trong cơ sở tri thức.",
+        "generation_note": "Diễn đạt rõ ràng, trung thực, từ chối trả lời đúng lúc và nêu rõ phạm vi dữ liệu hiện có.",
+        "reasoning": "Chatbot thực hiện hoàn hảo yêu cầu không bịa đặt thông tin và tự động từ chối trả lời khi thiếu dữ liệu đầu vào theo đúng đáp án chuẩn.",
         "q_id": "factual_010",
         "category": "agricultural_factual_qa"
       }
