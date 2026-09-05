@@ -36,7 +36,8 @@ class SensorReading:
     unit: str
     measured_at: str   # ISO 8601
     quality_flag: str  # "fresh" | "stale" | "missing" | "fault"
-    fault_type: Optional[str] = None  # None | "offline" | "spike" | "drift"
+    fault_type: Optional[str] = None  # None | "offline" | "spike" | "drift" | "frozen" | "duplicated_event" | "clock_skew" | "command_failed"
+    data_source: str = "fully_synthetic"  # "open_meteo_driven" | "device_simulated" | "fully_synthetic"
 
 
 @dataclass
@@ -49,6 +50,7 @@ class IrrigationEvent:
     duration_minutes: int
     volume_liters: float
     trigger: str  # "auto" | "manual"
+    data_source: str = "device_simulated"  # "open_meteo_driven" | "device_simulated" | "fully_synthetic"
 
 
 @dataclass
@@ -244,6 +246,9 @@ def simulate_zone(
                 value = round(max(lo, min(hi, value)), 2)
                 quality_flag = "fresh"
 
+            # Xác định data_source dựa trên loại cảm biến
+            ds = "open_meteo_driven" if st in ("temperature", "humidity", "rainfall") else "fully_synthetic"
+
             readings.append(SensorReading(
                 farm_id=farm_id,
                 zone_id=zone_id,
@@ -253,6 +258,7 @@ def simulate_zone(
                 measured_at=current_dt.isoformat(),
                 quality_flag=quality_flag,
                 fault_type=fault_type,
+                data_source=ds,
             ))
 
         current_dt += timedelta(minutes=INTERVAL_MINUTES)

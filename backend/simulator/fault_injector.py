@@ -8,6 +8,9 @@ phục vụ benchmark và kiểm thử hệ thống:
 - drift: Trôi giá trị dần theo thời gian do suy giảm hiệu chuẩn (fault)
 - frozen: Kẹt giá trị không đổi (fault)
 - device_offline: Thiết bị (van, bơm) không phản hồi lệnh
+- duplicated_event: Cảm biến gửi cùng reading liên tiếp (trùng lặp gói tin)
+- clock_skew: Timestamp cảm biến bị lệch so với server time (lỗi đồng hồ RTC)
+- command_failed: Thiết bị nhận lệnh nhưng không thực thi (ACK=0 hoặc không phản hồi status)
 
 Các kịch bản lỗi được gán cố định theo scenario_id, farm_id, zone_id, sensor_id / device_id.
 """
@@ -28,7 +31,7 @@ class FaultScenario:
     zone_id: Optional[str]
     target_type: str  # "sensor" | "device"
     target_name: str  # sensor_type (e.g. "soil_moisture") or device_id (e.g. "valve_01")
-    fault_type: str   # "offline" | "spike" | "drift" | "frozen"
+    fault_type: str   # "offline" | "spike" | "drift" | "frozen" | "duplicated_event" | "clock_skew" | "command_failed"
     start_time: str   # ISO format
     end_time: str     # ISO format
     params: dict = field(default_factory=dict)
@@ -96,6 +99,43 @@ STANDARD_BENCHMARK_FAULTS = [
         end_time="2026-09-06T00:00:00",
         params={"power_cut": True},
         description="Van điện từ tưới khu 1 đứt cáp nguồn, không phản hồi lệnh bật van",
+    ),
+    # ─── Fault types mới (v2 — Mục 8 acceptance_report.md) ──────────────────
+    FaultScenario(
+        scenario_id="SCENARIO_DUPLICATE_SM_FARM005",
+        farm_id="farm_005",
+        zone_id="farm_005_z01",
+        target_type="sensor",
+        target_name="soil_moisture",
+        fault_type="duplicated_event",
+        start_time="2026-09-04T10:00:00",
+        end_time="2026-09-04T14:00:00",
+        params={"repeat_count": 3},
+        description="Cảm biến độ ẩm đất gửi trùng 3 reading liên tiếp do lỗi buffer ACK của module LoRa",
+    ),
+    FaultScenario(
+        scenario_id="SCENARIO_CLOCK_SKEW_TEMP_FARM006",
+        farm_id="farm_006",
+        zone_id="farm_006_z02",
+        target_type="sensor",
+        target_name="temperature",
+        fault_type="clock_skew",
+        start_time="2026-09-02T00:00:00",
+        end_time="2026-09-03T12:00:00",
+        params={"skew_minutes": -45},
+        description="Đồng hồ RTC của node cảm biến nhiệt độ bị lệch -45 phút so với server time",
+    ),
+    FaultScenario(
+        scenario_id="SCENARIO_CMD_FAILED_PUMP_FARM007",
+        farm_id="farm_007",
+        zone_id="farm_007_z01",
+        target_type="device",
+        target_name="pump_01",
+        fault_type="command_failed",
+        start_time="2026-09-05T07:00:00",
+        end_time="2026-09-05T09:00:00",
+        params={"error_code": "RELAY_STUCK", "ack": False},
+        description="Máy bơm farm_007 nhận lệnh bật nhưng relay bị kẹt — ACK=False, không tưới được",
     ),
 ]
 
@@ -166,6 +206,17 @@ class FaultInjectorRegistry:
         elif ftype == "frozen":
             frozen_v = active_fault.params.get("frozen_value", reading_val or 50.0)
             return frozen_v, "fault", "frozen"
+        elif ftype == "duplicated_event":
+            # Trả về y hệt giá trị hiện tại — flag là "fault" để phân biệt với "fresh"
+            return reading_val, "fault", "duplicated_event"
+        elif ftype == "clock_skew":
+            # Giá trị đúng nhưng timestamp bị lệch — ta đánh dấu bằng fault_type, giá trị không thay đổi
+            skew = active_fault.params.get("skew_minutes", 0)
+            # Trả về giá trị gốc, caller nên cộng timedelta(minutes=skew) vào measured_at nếu cần
+            return reading_val, "fault", f"clock_skew:{skew:+d}min"
+        elif ftype == "command_failed":
+            # Device không thực thi lệnh — giá trị sensor liên quan không thay đổi, device status = error
+            return reading_val, "fault", "command_failed"
 
         return reading_val, "fresh", None
 
