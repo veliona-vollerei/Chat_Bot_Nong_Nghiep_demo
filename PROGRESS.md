@@ -1,4 +1,4 @@
-﻿# 🌾 NextFarm Chatbot Nông Nghiệp AI — v2.2
+# 🌾 NextFarm Chatbot Nông Nghiệp AI — v2.2
 ## Tài liệu hệ thống đầy đủ & Hướng dẫn vận hành
 
 ---
@@ -813,13 +813,13 @@ Admin upload file
    - "reject" → xóa file tạm, không thay đổi gì
 ```
 
-### 8.2 Script convert Parquet
+### 8.2 Script convert Parquet (Xuất dữ liệu)
 
 ```bash
 python convert_parquet.py
 ```
 
-Đọc file `.parquet` từ `data/parquet/`, chuyển sang JSON và nạp vào hệ thống.
+Xuất toàn bộ dữ liệu từ các bảng PostgreSQL (`documents`, `users`, `facts`, v.v.) và vector collection trong ChromaDB ra thành các file `.parquet` lưu tại thư mục `data/parquet/`. Hỗ trợ tự động chuẩn hóa các kiểu dữ liệu phức tạp thành JSON.
 
 ### 8.3 Kiểm tra sau ingest
 
