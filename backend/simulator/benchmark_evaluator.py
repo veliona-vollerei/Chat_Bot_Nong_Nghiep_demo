@@ -67,6 +67,7 @@ REFUSAL_KEYWORDS = [
     "không hỗ trợ", "xin lỗi", "không thể trả lời", "không trong hệ thống",
     "vui lòng thử lại", "hỏi lại", "không suy đoán", "không biết",
     "không đủ thông tin", "ngoài khả năng", "không phải chuyên môn",
+    "không có hướng dẫn", "chưa tìm thấy", "không có công thức", "không đề cập",
 ]
 
 PASS_THRESHOLD_SCORE = 60  # LLM judge score cần đạt để PASS
@@ -173,6 +174,14 @@ def _synthesize_answer_for_eval(question: str) -> tuple[str, float]:
         crop = routing.get("crop")
         season = routing.get("season")
         keywords = routing.get("topic_keywords", [])
+
+        if q_type == "tiền_đề_sai":
+            answer = (
+                "Câu hỏi chứa điều kiện phi thực tế hoặc vô lý (ví dụ: địa danh, thời gian không phù hợp). "
+                "Hệ thống không thể cung cấp dữ liệu cho trường hợp này."
+            )
+            latency_ms = (time.time() - t0) * 1000
+            return answer, latency_ms
 
         answer_data = ""
         source_info = "Kho tri thức Nông nghiệp"

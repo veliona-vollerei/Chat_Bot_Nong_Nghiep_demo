@@ -46,6 +46,7 @@ Phân loại:
 - "định_lượng": hỏi về số liệu cụ thể (liều lượng phân bón, năng suất, mật độ, hệ số...)
 - "phù_hợp/quan_hệ": hỏi cái gì phù hợp/thích hợp với điều kiện nào, quan hệ nông sản - sâu bệnh - mùa vụ - loại đất
 - "diễn_giải": hỏi giải thích khái niệm, quy trình, kỹ thuật canh tác, bảo quản, quản lý nông sản
+- "tiền_đề_sai": hỏi về nông nghiệp nhưng gắn với điều kiện, địa danh, thời gian phi thực tế (ví dụ: trồng lúa trên sao Hỏa, sao Kim, năm 2050, v.v.)
 - "ngoài_phạm_vi": hoàn toàn không liên quan đến ngành nông nghiệp (bất động sản, du lịch, giải trí...)
 - "cần_làm_rõ": quá mơ hồ, không đủ thông tin để tra cứu
 

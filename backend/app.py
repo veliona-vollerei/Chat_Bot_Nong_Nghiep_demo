@@ -1579,12 +1579,25 @@ async def chat(request: ChatRequest):
         f"soil={soil_type}, growth_stage={growth_stage}"
     )
     
-    # ─── Bước 3: Ngoài phạm vi ────────────────────────────────
+    # ─── Bước 3: Ngoài phạm vi & Tiền đề sai ────────────────────────────────
     if question_type == "ngoài_phạm_vi":
         ans = (
             "Xin lỗi, câu hỏi của bạn nằm ngoài phạm vi tư vấn về nông nghiệp.\n\n"
             "Tôi hỗ trợ giải đáp về các chủ đề: kỹ thuật canh tác, giống nông sản, phân bón, "
             "quản lý nước, phòng trừ sâu bệnh, quy trình thu hoạch và bảo quản."
+        )
+        save_chat_message(session_id, "bot", ans, {"layer": "none", "type": question_type}, username=request.username)
+        return ChatResponse(
+            session_id=session_id,
+            answer=ans,
+            question_type=question_type,
+            layer_used="none",
+        )
+        
+    if question_type == "tiền_đề_sai":
+        ans = (
+            "Câu hỏi chứa điều kiện phi thực tế hoặc vô lý (ví dụ: địa danh, thời gian không phù hợp). "
+            "Hệ thống không thể cung cấp dữ liệu cho trường hợp này."
         )
         save_chat_message(session_id, "bot", ans, {"layer": "none", "type": question_type}, username=request.username)
         return ChatResponse(
