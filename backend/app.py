@@ -1394,9 +1394,44 @@ async def get_acceptance_status(username: Optional[str] = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi đọc file nghiệm thu: {e}")
 
+    # ─── Tính latency THẬT của chatbot (chỉ synthesis, không gồm AI-Judge) ───
+    # Lấy từ expert_review_queue.json vì file này lưu ĐẦY ĐỦ (không bị cắt còn 10
+    # như judge_stats.details trong acceptance_results.json).
+    real_latency_stats = None
+    try:
+        queue_path = BASE_DIR / "data" / "expert_review_queue.json"
+        if queue_path.exists():
+            queue_data = json.loads(queue_path.read_text(encoding="utf-8"))
+            synth_latencies = [
+                item["synth_latency_ms"]
+                for item in queue_data.get("items", [])
+                if isinstance(item.get("synth_latency_ms"), (int, float))
+            ]
+            if synth_latencies:
+                synth_latencies.sort()
+                n = len(synth_latencies)
+                def _pct(p):
+                    idx = min(n - 1, int(round(p * (n - 1))))
+                    return round(synth_latencies[idx], 1)
+                real_latency_stats = {
+                    "sample_size": n,
+                    "p50_ms": _pct(0.50),
+                    "p90_ms": _pct(0.90),
+                    "p95_ms": _pct(0.95),
+                    "note": "Latency THẬT người dùng trải nghiệm (chỉ trả lời, không gồm AI-Judge chấm điểm ngầm)",
+                }
+    except Exception as e:
+        logger.warning(f"Không tính được real_latency_stats: {e}")
+
     return {
         "source_file": chosen_path.name,
         "is_latest_fix": chosen_path == post_fix_path,
+        "real_chatbot_latency": real_latency_stats or {
+            "note": (
+                "Chưa có dữ liệu synth_latency_ms (bản benchmark này chạy trước khi tách "
+                "riêng latency thật). Chạy lại: python -m backend.simulator.benchmark_evaluator"
+            )
+        },
         **data,
     }
 
