@@ -171,6 +171,26 @@ async def api_get_irrigation_history(
     return result
 
 
+# ─── GET /api/tools/command-history ───────────────────────────────────────
+@router.get("/command-history")
+async def api_get_command_history(
+    farm_id: str,
+    device_id: Optional[str] = None,
+    limit: int = 10,
+    x_username: Optional[str] = Header(None),
+):
+    """Lịch sử lệnh điều khiển thiết bị."""
+    farm_ctx = _build_ctx(x_username, farm_id)
+    try:
+        require_farm_access(farm_ctx, farm_id, "get_command_history")
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+    result = _run_tool("get_command_history", get_command_history,
+                       farm_ctx, farm_id, device_id, limit)
+    return result
+
+
 # ─── GET /api/tools/alerts ─────────────────────────────────────────────────
 @router.get("/alerts")
 async def api_get_alerts(

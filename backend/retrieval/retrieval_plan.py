@@ -205,6 +205,8 @@ async def _fetch_tools(
     farm_id: str,
     zone_id: Optional[str],
     sensor_types: Optional[list[str]] = None,
+    device_id: Optional[str] = None,
+    question: str = "",
 ) -> RetrievalSource:
     """Fetch từ NextFarm IoT Tools — chỉ chạy khi có farm_context hợp lệ."""
     if farm_context is None or not farm_id:
@@ -214,20 +216,47 @@ async def _fetch_tools(
         )
 
     try:
-        from backend.tools.nextfarm_tools import get_latest_sensor, get_alerts
+        from backend.tools.nextfarm_tools import (
+            get_latest_sensor, get_alerts, get_device_status, 
+            get_irrigation_schedule, get_irrigation_history, get_command_history
+        )
 
         tool_results = []
         warnings = []
-
-        # Lấy sensor data cho các loại được yêu cầu
-        types_to_fetch = sensor_types or ["soil_moisture", "temperature"]
-        for stype in types_to_fetch:
-            result = await asyncio.to_thread(
-                get_latest_sensor, farm_context, farm_id, zone_id or "zone_A", stype
-            )
+        
+        q = question.lower()
+        is_device = any(k in q for k in ["thiết bị", "van", "bơm", "hoạt động", "trạng thái"])
+        is_irrigation_schedule = any(k in q for k in ["lịch tưới", "kế hoạch tưới"])
+        is_irrigation_history = any(k in q for k in ["lịch sử tưới", "đã tưới", "hôm qua", "tuần trước"])
+        is_command_history = any(k in q for k in ["lịch sử lệnh", "lệnh điều khiển", "ai đã bật", "ai đã tắt"])
+        is_sensor = any(k in q for k in ["cảm biến", "độ ẩm", "nhiệt độ", "ph", "ec"])
+        
+        # Nếu không rõ là gì, mặc định lấy sensor, hoặc nếu người dùng hỏi rõ về sensor
+        if not any([is_device, is_irrigation_schedule, is_irrigation_history, is_command_history]) or is_sensor:
+            types_to_fetch = sensor_types or ["soil_moisture", "temperature"]
+            for stype in types_to_fetch:
+                result = await asyncio.to_thread(
+                    get_latest_sensor, farm_context, farm_id, zone_id or "zone_A", stype
+                )
+                tool_results.append(result)
+                if result.get("freshness_warning"):
+                    warnings.append(result["freshness_warning"])
+                    
+        if is_device:
+            result = await asyncio.to_thread(get_device_status, farm_context, farm_id, device_id or "valve_A")
             tool_results.append(result)
-            if result.get("freshness_warning"):
-                warnings.append(result["freshness_warning"])
+            
+        if is_irrigation_schedule:
+            result = await asyncio.to_thread(get_irrigation_schedule, farm_context, farm_id, zone_id or "zone_A")
+            tool_results.append(result)
+            
+        if is_irrigation_history:
+            result = await asyncio.to_thread(get_irrigation_history, farm_context, farm_id, zone_id or "zone_A", None, None)
+            tool_results.append(result)
+            
+        if is_command_history:
+            result = await asyncio.to_thread(get_command_history, farm_context, farm_id, device_id or "valve_A", 10)
+            tool_results.append(result)
 
         # Lấy alerts
         alert_result = await asyncio.to_thread(
@@ -279,6 +308,7 @@ async def execute_retrieval_plan(
     zone_id: Optional[str] = None,
     sensor_types: Optional[list[str]] = None,
     top_k_docs: int = 4,
+    device_id: Optional[str] = None,
     **kwargs,
 ) -> RetrievalPlanResult:
     """
@@ -328,7 +358,7 @@ async def execute_retrieval_plan(
 
     # Fetch tools nếu có farm_context (IoT data)
     if farm_context is not None and farm_id:
-        tasks.append(_fetch_tools(farm_context, farm_id, zone_id, sensor_types))
+        tasks.append(_fetch_tools(farm_context, farm_id, zone_id, sensor_types, device_id, query_str))
         task_names.append("tools")
 
     # Chạy song song
