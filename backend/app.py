@@ -1363,6 +1363,43 @@ async def expert_review_submit(payload: dict, username: Optional[str] = None):
     return {"status": "success", "item_id": item_id, "verdict": verdict}
 
 
+@app.get("/api/admin/acceptance-status")
+async def get_acceptance_status(username: Optional[str] = None):
+    """
+    Admin: Hiển thị kết quả nghiệm thu benchmark 260 câu mới nhất.
+    Ưu tiên đọc acceptance_results_post_fix.json nếu có (bản sửa lỗi mới hơn),
+    fallback về acceptance_results.json nếu không có bản post_fix.
+    """
+    if username != "admin":
+        user = get_user_by_username(username) if username else None
+        if not user or user.get("role") != "admin":
+            raise HTTPException(status_code=403, detail="Yêu cầu quyền Admin.")
+
+    post_fix_path = BASE_DIR / "data" / "acceptance_results_post_fix.json"
+    original_path = BASE_DIR / "data" / "acceptance_results.json"
+
+    chosen_path = None
+    if post_fix_path.exists():
+        chosen_path = post_fix_path
+    elif original_path.exists():
+        chosen_path = original_path
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail="Chưa có kết quả nghiệm thu. Hãy chạy: python -m backend.simulator.benchmark_evaluator",
+        )
+
+    try:
+        data = json.loads(chosen_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi đọc file nghiệm thu: {e}")
+
+    return {
+        "source_file": chosen_path.name,
+        "is_latest_fix": chosen_path == post_fix_path,
+        **data,
+    }
+
 @app.get("/health")
 async def health_check():
     """Kiểm tra trạng thái hệ thống."""

@@ -124,6 +124,16 @@
 
             <!-- Tab 3: Benchmark / Evaluation (Static Results) -->
             <div class="admin-tab-content hidden" id="adminBenchmarkSection">
+                <div class="benchmark-card" id="acceptanceStatusCard" style="margin-bottom:16px">
+                    <div class="benchmark-card-header">
+                        <div>
+                            <h3>📋 Trạng Thái Nghiệm Thu Chính Thức</h3>
+                            <p id="acceptanceSourceFile" style="font-size:11px;color:var(--text-muted)"></p>
+                        </div>
+                        <span id="acceptanceStatusBadge" style="padding:4px 12px;border-radius:8px;font-weight:600"></span>
+                    </div>
+                    <div class="benchmark-summary" id="acceptanceSummaryGrid"></div>
+                </div>
                 <!-- Banner phân biệt rõ ràng: Đây là dữ liệu batch tĩnh -->
                 <div id="evaluationStaticBanner" style="
                     display: flex; align-items: center; gap: 10px;
@@ -707,6 +717,42 @@
 
         // Override switchAdminTab để thêm monitoring tab
         const _origSwitchAdminTab = typeof switchAdminTab !== 'undefined' ? switchAdminTab : null;
+        async function loadAcceptanceStatus() {
+            const user = JSON.parse(localStorage.getItem("chat_user") || "null");
+            const username = user ? user.username : "";
+            const badge = document.getElementById("acceptanceStatusBadge");
+            const sourceFile = document.getElementById("acceptanceSourceFile");
+            const grid = document.getElementById("acceptanceSummaryGrid");
+
+            try {
+                const res = await fetch(`/api/admin/acceptance-status?username=${encodeURIComponent(username)}`);
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: "Chưa có dữ liệu" }));
+                    sourceFile.textContent = err.detail;
+                    badge.textContent = "N/A";
+                    badge.style.background = "rgba(148,163,184,0.2)";
+                    return;
+                }
+                const d = await res.json();
+
+                sourceFile.textContent = `Nguồn: ${d.source_file}` + (d.is_latest_fix ? " (bản sửa lỗi mới nhất)" : " (chưa có bản sửa lỗi mới hơn)");
+                badge.textContent = d.status === "ACCEPTED" ? "✅ ACCEPTED" : "❌ REJECTED";
+                badge.style.background = d.status === "ACCEPTED" ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)";
+                badge.style.color = d.status === "ACCEPTED" ? "#22c55e" : "#ef4444";
+
+                grid.innerHTML = `
+                    <div class="summary-item"><span class="summary-label">Độ chính xác tổng</span><span class="summary-value">${d.overall_accuracy_pct}%</span></div>
+                    <div class="summary-item"><span class="summary-label">Tổng câu / Đạt / Không đạt</span><span class="summary-value">${d.total_questions} / ${d.total_passed} / ${d.total_failed}</span></div>
+                    <div class="summary-item"><span class="summary-label">IAM Cross-farm Leaks</span><span class="summary-value">${d.iam_cross_farm_leaks}</span></div>
+                    <div class="summary-item"><span class="summary-label">Tool Selection Accuracy</span><span class="summary-value">${d.tool_selection_accuracy_pct}%</span></div>
+                    <div class="summary-item"><span class="summary-label">Chế độ đánh giá</span><span class="summary-value">${d.evaluation_mode}</span></div>
+                    <div class="summary-item"><span class="summary-label">Đánh giá lúc</span><span class="summary-value" style="font-size:11px">${new Date(d.evaluated_at).toLocaleString('vi-VN')}</span></div>
+                `;
+            } catch (e) {
+                sourceFile.textContent = "Lỗi tải dữ liệu: " + e.message;
+            }
+        }
+
         function switchAdminTab(tabName) {
             const tabs = {
                 upload: 'adminUploadSection',
@@ -741,6 +787,7 @@
                 if (typeof loadAdminUsers === 'function') loadAdminUsers();
             } else if (tabName === 'benchmark') {
                 if (typeof loadBenchmarkResults === 'function') loadBenchmarkResults();
+                if (typeof loadAcceptanceStatus === 'function') loadAcceptanceStatus();
             } else if (tabName === 'expertReview') {
                 if (typeof loadExpertReviewQueue === 'function') loadExpertReviewQueue();
             }

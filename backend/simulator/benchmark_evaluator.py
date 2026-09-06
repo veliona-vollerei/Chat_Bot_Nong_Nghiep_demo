@@ -335,7 +335,7 @@ def evaluate_benchmark(
                 reason = "schema_check_only — bỏ qua Gemini call"
             else:
                 # Full flow: gọi Gemini thật + LLM judge
-                chatbot_answer, _ = _synthesize_answer_for_eval(q_text)
+                chatbot_answer, synth_latency_ms = _synthesize_answer_for_eval(q_text)
                 ground_truth = oracle_answer if oracle_answer else (
                     "Câu trả lời cần cung cấp thông tin nông học chính xác, đúng trọng tâm câu hỏi, "
                     "không bịa số liệu, và từ chối trả lời nếu không có dữ liệu."
@@ -351,6 +351,7 @@ def evaluate_benchmark(
                     "chatbot_answer": chatbot_answer,
                     "oracle_answer": ground_truth,
                     "ai_verdict": "correct" if passed else "incorrect",
+                    "synth_latency_ms": synth_latency_ms,
                 })
                 if not passed:
                     reason = f"Judge avg score {avg_score:.0f} < {PASS_THRESHOLD_SCORE}"
