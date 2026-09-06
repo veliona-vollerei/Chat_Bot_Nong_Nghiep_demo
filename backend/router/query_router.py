@@ -17,6 +17,9 @@ question_type ∈ {
 CHANGELOG:
     v1.1.0 (GĐ1 Mục 1): Bỏ crop='lúa' mặc định trong fallback. Thêm growth_stage.
             Khi router không xác định crop → None (không suy diễn).
+    v1.2.0 (GĐ3 Router): Thêm fast-path rule-based (Layer 0-4) trước Gemini.
+            Học từ RAG-and-Agent: 0 API call cho câu rõ ràng, <5ms fast-path.
+            Ghi reason_code/decision_path vào mọi quyết định để audit được.
 """
 import json
 import logging
@@ -261,3 +264,45 @@ def synthesize_answer(
     except Exception as e:
         logger.error(f"Synthesis error: {e}")
         return "Xin lỗi, đã xảy ra lỗi khi xử lý câu trả lời. Vui lòng thử lại."
+
+
+def route_question_with_fast_path(
+    question: str,
+    history: Optional[list] = None,
+    conversation_id: Optional[str] = None,
+    farm_id: Optional[str] = None,
+    zone_id: Optional[str] = None,
+) -> dict:
+    """
+    Router đa tầng: thử fast-path rule-based trước, fallback Gemini khi cần.
+
+    Kiến trúc học từ RAG-and-Agent (kavsir):
+    - Câu hỏi rõ ràng → fast-path <5ms, 0 Gemini call
+    - Câu hỏi mơ hồ → fallback sang Gemini như cũ
+
+    Returns: dict (giống route_question), có thêm:
+        "decision_path": str  — audit trail (fast_path/gemini)
+        "reason_code": str    — lý do quyết định
+    """
+    from backend.router.fast_path_router import try_fast_path
+
+    # ─── Thử fast-path trước ──────────────────────────────────────────
+    fast_result = try_fast_path(question, history=history, farm_id=farm_id, zone_id=zone_id)
+    if fast_result is not None:
+        logger.info(
+            f"[FastPath] {fast_result.get('decision_path')} | "
+            f"type={fast_result.get('question_type')} | "
+            f"reason={fast_result.get('reason_code')}"
+        )
+        return fast_result
+
+    # ─── Fallback: Gemini router ──────────────────────────────────────
+    logger.debug(f"[FastPath] No rule matched → calling Gemini router")
+    result = route_question(question, history=history, conversation_id=conversation_id)
+
+    # Gắn thêm decision_path và reason_code cho audit
+    result.setdefault("decision_path", "gemini_router")
+    result.setdefault("reason_code", "NO_FAST_PATH_MATCH")
+
+    return result
+

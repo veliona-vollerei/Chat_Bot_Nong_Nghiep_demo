@@ -19,13 +19,14 @@ from pydantic import BaseModel
 
 from backend.config import APP_HOST, APP_PORT, DEBUG, validate_config, BASE_DIR
 from backend.preprocessing.vietnamese_nlp import normalize_input, extract_season, extract_soil_type, extract_variety_name
-from backend.router.query_router import route_question, synthesize_answer
+from backend.router.query_router import route_question, synthesize_answer, route_question_with_fast_path
 from backend.layers.layer1_facts import get_fact, get_rice_variety, get_all_rice_varieties
 from backend.layers.layer2_kg import find_suitable_varieties, find_pest_info, find_technique_info
 from backend.layers.layer3_docs import semantic_search, get_chunk_count
 from backend.utils.versioning import get_version_context, version_log_prefix, SYSTEM_VERSION
 from backend.iam.iam import build_farm_context, check_farm_access
 from backend.retrieval.retrieval_plan import execute_retrieval_plan
+from backend.validator import validate_answer, refine_query_for_retry, ABSTAIN_ANSWER
 from backend.db.postgres import (
     save_chat_message, get_chat_history, get_all_sessions, get_user_sessions, delete_chat_session, save_feedback,
     create_user, get_user_by_username, get_user_by_id, get_all_users, update_user_block_status,
@@ -751,6 +752,61 @@ def _is_question_match(user_q: str, qe_q: str) -> tuple[bool, float]:
     return False, ratio
 
 
+def _classify_root_cause(
+    retrieval_note: str,
+    generation_note: str,
+    factual_score: float,
+    semantic_score: float,
+    answer_correctness: float,
+) -> str:
+    """
+    Phân loại nguyên nhân gốc của câu trả lời sai/thấp điểm.
+
+    GĐΔ3: Học từ RAG-and-Agent (kavsir) — root-cause cho từng câu fail
+    giúp debug nhanh hơn khi có câu fail mới.
+
+    Returns one of:
+        'OK'                    — điểm cao (>= 80)
+        'RETRIEVAL_MISS'        — không tìm được đúng doc/chunk
+        'SYNTHESIS_HALLUCINATION' — factual thấp nhưng semantic cao
+        'CORPUS_GAP'            — không có dữ liệu về chủ đề này
+        'ROUTER_ERROR'          — câu hỏi bị route sai tầng
+        'PARTIAL_ANSWER'        — có một phần đúng nhưng thiếu thông tin
+    """
+    if answer_correctness >= 80:
+        return "OK"
+
+    retrieval_lower = (retrieval_note or "").lower()
+    generation_lower = (generation_note or "").lower()
+
+    # Halluicnation: factual score rất thấp nhưng semantic vẫn được
+    if factual_score < 40 and semantic_score >= 60:
+        return "SYNTHESIS_HALLUCINATION"
+
+    # Corpus gap: không tìm thấy dữ liệu nào
+    corpus_gap_signals = ["không tìm thấy", "không có dữ liệu", "ngoài phạm vi",
+                          "corpus", "không tại", "no data", "not found"]
+    if any(s in retrieval_lower for s in corpus_gap_signals):
+        return "CORPUS_GAP"
+
+    # Router error: route sai tầng
+    router_signals = ["route sai", "router", "wrong layer", "tầng sai", "keyword collision"]
+    if any(s in retrieval_lower for s in router_signals):
+        return "ROUTER_ERROR"
+
+    # Retrieval miss: tìm được nhưng không đúng
+    retrieval_miss_signals = ["không đúng", "sai nguồn", "wrong source", "irrelevant",
+                              "không liên quan", "off-topic", "sai chủ đề"]
+    if any(s in retrieval_lower for s in retrieval_miss_signals):
+        return "RETRIEVAL_MISS"
+
+    # Partial answer: một phần đúng
+    if factual_score >= 40 and answer_correctness < 80:
+        return "PARTIAL_ANSWER"
+
+    return "RETRIEVAL_MISS"  # mặc định
+
+
 async def _check_and_record_qe_match(question: str, answer: str, session_id: Optional[str] = None):
     """
     Background: nếu câu hỏi của user trùng với một câu trong Q&E.txt,
@@ -821,6 +877,16 @@ async def _check_and_record_qe_match(question: str, answer: str, session_id: Opt
 
         data = _load_benchmark_results()
         qid = str(best_match["id"])
+
+        # GĐ3 P2: Tự động phân loại root cause cho câu fail
+        root_cause = _classify_root_cause(
+            retrieval_note=judge_data.get("retrieval_note", ""),
+            generation_note=judge_data.get("generation_note", ""),
+            factual_score=factual,
+            semantic_score=semantic,
+            answer_correctness=answer_correctness,
+        )
+
         data["results"][qid] = {
             "id": best_match["id"],
             "question": best_match["question"],
@@ -835,6 +901,7 @@ async def _check_and_record_qe_match(question: str, answer: str, session_id: Opt
             "retrieval_note": judge_data.get("retrieval_note", ""),
             "generation_note": judge_data.get("generation_note", ""),
             "reasoning": judge_data.get("reasoning", ""),
+            "root_cause": root_cause,           # GĐ3 P2: category để debug nhanh
             "triggered_at": datetime.now().isoformat(),
             "similarity_score": round(best_sim, 3),
         }
@@ -1413,12 +1480,16 @@ async def chat(request: ChatRequest):
     normalized = normalize_input(question)
     norm_question = normalized["normalized"]
     
-    # ─── Bước 2: Router phân loại (truyền conversation_history & session_id) ─
+    # ─── Bước 2: Router phân loại — fast-path trước, Gemini khi cần ──────
+    # GĐ3 Router: học từ RAG-and-Agent, thêm fast-path rule-based <5ms, 0 API call
+    # cho câu hỏi rõ ràng. Ghi reason_code/decision_path để audit.
     routing = await asyncio.to_thread(
-        route_question,
+        route_question_with_fast_path,
         norm_question,
         history=request.conversation_history,
         conversation_id=session_id,
+        farm_id=request.farm_id,
+        zone_id=request.zone_id,
     )
     question_type = routing.get("question_type", "diễn_giải")
     crop = routing.get("crop") or None  # GĐ1 Mục 1: None nếu không xác định
@@ -1621,27 +1692,94 @@ async def chat(request: ChatRequest):
             freshness_warnings=freshness_warnings or None,
         )
 
-    # ─── Bước 8: Tổng hợp câu trả lời ─────────────────────────
-    # Thêm freshness warning vào context tổng hợp
+    # ─── Bước 8: Tổng hợp + Validate (Guardrail retry-refine) ────────────
+    # GĐ3 Guardrail: Học từ RAG-and-Agent validation_node:
+    # - Fail-safe cứng: exception → invalid, không bao giờ mặc định pass
+    # - Retry-refine tối đa 2 lần với retrieval query tinh chỉnh
+    # - Hết lượt vẫn invalid → ép abstain + xóa sources
     freshness_note = ""
     if freshness_warnings:
         freshness_note = "\n\n⚠️ Lưu ý dữ liệu: " + " | ".join(freshness_warnings)
 
-    final_answer = await asyncio.to_thread(
-        synthesize_answer,
-        question=question,
-        data=answer_data + freshness_note,
-        source=f"Nguồn: {source_info} | Kho tri thức Nông nghiệp"
-    )
+    MAX_VALIDATE_ATTEMPTS = 3  # 1 lần đầu + 2 lần retry
+    current_data = answer_data + freshness_note
+    current_source = source_info
+    final_answer = None
+    validation_skipped = False
+
+    for attempt in range(MAX_VALIDATE_ATTEMPTS):
+        # Sinh câu trả lời
+        candidate = await asyncio.to_thread(
+            synthesize_answer,
+            question=question,
+            data=current_data,
+            source=f"Nguồn: {current_source} | Kho tri thức Nông nghiệp",
+            conversation_id=session_id,
+        )
+
+        # Validate groundedness
+        validation = await asyncio.to_thread(
+            validate_answer,
+            question=question,
+            answer=candidate,
+            context_data=current_data,
+            conversation_id=session_id,
+        )
+
+        if validation["valid"]:
+            # Câu trả lời được xác nhận — dùng luôn
+            final_answer = candidate
+            if attempt > 0:
+                logger.info(f"[Validator] Pass ở attempt={attempt+1} | conversation={session_id}")
+            break
+        else:
+            logger.warning(
+                f"[Validator] Attempt {attempt+1}/{MAX_VALIDATE_ATTEMPTS} FAIL | "
+                f"reason={validation['reason']} | hallucination={validation['hallucination_detected']} | "
+                f"conversation={session_id}"
+            )
+
+            if attempt < MAX_VALIDATE_ATTEMPTS - 1:
+                # Chưa hết lượt — tinh chỉnh query và thử retrieval lại
+                refined_query = refine_query_for_retry(
+                    question=question,
+                    failed_reason=validation["reason"],
+                    original_keywords=keywords,
+                    attempt=attempt + 1,
+                )
+                logger.info(f"[Validator] Retry retrieval with refined query: '{refined_query[:80]}'")
+                try:
+                    retry_result = await execute_retrieval_plan(
+                        routing=routing,
+                        farm_context=farm_ctx,
+                        norm_question=refined_query,
+                        keywords=keywords,
+                    )
+                    if retry_result and retry_result.merged_data:
+                        current_data = retry_result.merged_data + freshness_note
+                        current_source = retry_result.merged_source_info or source_info
+                except Exception as _re:
+                    logger.warning(f"[Validator] Retry retrieval failed: {_re}")
+                    # Giữ current_data cũ, cố thử synthesize lại
+            else:
+                # Hết lượt — ép abstain
+                logger.warning(f"[Validator] All {MAX_VALIDATE_ATTEMPTS} attempts failed → forcing abstain")
+                final_answer = ABSTAIN_ANSWER
+                validation_skipped = True
+                break
+
+    if final_answer is None:
+        final_answer = ABSTAIN_ANSWER  # Fallback an toàn
 
     save_chat_message(session_id, "bot", final_answer, {
         "layer": layer_used,
         "type": question_type,
-        "source": source_info,
+        "source": current_source,
         "is_partial": is_partial,
         "system_version": SYSTEM_VERSION,   # GĐ1 Mục 13: versioning
         "farm_id": request.farm_id,         # GĐ2: audit farm context
         "freshness_warnings": freshness_warnings,
+        "validation_forced_abstain": validation_skipped,  # GĐ3: audit guardrail
     }, username=request.username)
 
     # ─── Ghi nhận ngầm nếu câu hỏi trùng với Q&E.txt ───
@@ -1654,7 +1792,7 @@ async def chat(request: ChatRequest):
     return ChatResponse(
         session_id=session_id,
         answer=final_answer,
-        source=source_info,
+        source=current_source,
         is_partial_match=is_partial,
         partial_match_warning=partial_warning,
         question_type=question_type,
@@ -1665,6 +1803,7 @@ async def chat(request: ChatRequest):
         freshness_warnings=freshness_warnings or None,
         requires_clarification=requires_clarification_flag,
     )
+
 
 
 # ─── Sessions & History Endpoints ─────────────────────────────

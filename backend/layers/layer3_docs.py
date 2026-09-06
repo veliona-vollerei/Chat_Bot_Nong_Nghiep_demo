@@ -202,3 +202,92 @@ def get_chunk_count() -> int:
     """Đếm số chunk đang có trong ChromaDB."""
     from backend.db.chroma_db import get_collection
     return get_collection().count()
+
+
+def hybrid_search(
+    query: str,
+    crop: str = "",
+    season: Optional[str] = None,
+    top_k: int = 5,
+) -> dict:
+    """
+    Hybrid Retrieval: Dense (ChromaDB) + Sparse (BM25) → hợp nhất qua RRF.
+
+    Học từ RAG-and-Agent (kavsir):
+    - Dense: tốt cho semantic similarity (khái niệm, ý nghĩa)
+    - BM25: tốt cho exact match (tên thuốc BVTV, tên giống, mã liều lượng)
+    - RRF: kết hợp tốt nhất của cả hai, giảm phụ thuộc threshold
+
+    Đặc biệt cải thiện nhóm câu định_lượng (F1 0.782 hiện tại).
+
+    Args:
+        query: câu hỏi
+        crop: loại cây (có thể rỗng → search toàn corpus)
+        season: mùa vụ (filter sau khi retrieve)
+        top_k: số kết quả
+
+    Returns: dict giống semantic_search() để backward compat
+        {"found": bool, "chunks": list, "source_info": str}
+    """
+    from backend.retrieval.bm25_retrieval import bm25_search
+    from backend.retrieval.rrf_merger import rrf_merge
+
+    # ─── Dense retrieval ──────────────────────────────────────────────────
+    # Lấy nhiều hơn top_k để RRF có đủ candidates
+    dense_result = semantic_search(query=query, crop=crop, season=season, top_k=top_k * 2)
+    dense_chunks = dense_result.get("chunks", [])
+
+    # ─── Sparse (BM25) retrieval ──────────────────────────────────────────
+    sparse_chunks = []
+    try:
+        sparse_chunks = bm25_search(query=query, top_k=top_k * 2, crop=crop or None)
+    except Exception as e:
+        logger.warning(f"BM25 search failed, falling back to dense only: {e}")
+
+    # ─── Nếu không có sparse results → trả về dense như cũ ──────────────
+    if not sparse_chunks:
+        # Trim về top_k
+        if dense_result.get("found"):
+            dense_result["chunks"] = dense_chunks[:top_k]
+            dense_result["retrieval_mode"] = "dense_only"
+        return dense_result
+
+    # ─── RRF Merge ───────────────────────────────────────────────────────
+    merged = rrf_merge(dense_chunks, sparse_chunks, k=60, top_k=top_k)
+
+    if not merged:
+        # Fallback về dense nếu merge thất bại
+        if dense_result.get("found"):
+            dense_result["chunks"] = dense_chunks[:top_k]
+            dense_result["retrieval_mode"] = "dense_only_fallback"
+        return dense_result
+
+    # ─── Lắp ráp kết quả ──────────────────────────────────────────────────
+    # Bổ sung fields cần thiết nếu thiếu (BM25 chunk không có similarity)
+    for chunk in merged:
+        chunk.setdefault("similarity", chunk.get("rrf_score", 0.0))
+        chunk.setdefault("topic", "")
+        chunk.setdefault("source", "doc_001")
+        chunk.setdefault("source_document_id", "doc_001")
+        chunk.setdefault("confidence", "chính thống")
+        chunk.setdefault("heading_path", "")
+        chunk.setdefault("chunk_type", "paragraph")
+        chunk.setdefault("source_section", "")
+
+    unique_sources = list(dict.fromkeys(c.get("source") for c in merged if c.get("source")))
+    source_str = ", ".join(unique_sources) if unique_sources else "Kho tri thức Nông nghiệp"
+
+    # Thống kê để debug
+    n_from_both = sum(1 for c in merged if "sources" in c and len(c.get("sources", [])) > 1)
+    logger.debug(
+        f"HybridSearch: {len(dense_chunks)} dense + {len(sparse_chunks)} sparse → "
+        f"{len(merged)} merged ({n_from_both} xuất hiện cả 2 nguồn)"
+    )
+
+    return {
+        "found": True,
+        "chunks": merged,
+        "source_info": source_str,
+        "retrieval_mode": "hybrid_rrf",
+    }
+

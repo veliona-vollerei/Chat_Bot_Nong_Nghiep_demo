@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 from backend.layers.layer1_facts import get_fact, search_facts_by_topic
 from backend.layers.layer2_kg import find_suitable_varieties, find_pest_info, find_technique_info
-from backend.layers.layer3_docs import semantic_search
+from backend.layers.layer3_docs import semantic_search, hybrid_search
 
 logger = logging.getLogger(__name__)
 
@@ -166,21 +166,29 @@ async def _fetch_docs(
     season: Optional[str],
     top_k: int = 4,
 ) -> RetrievalSource:
-    """Fetch từ Layer 3 — Document Store RAG."""
+    """Fetch từ Layer 3 — Document Store RAG (Hybrid: Dense + BM25 + RRF).
+
+    GĐ3 Hybrid Retrieval: Học từ RAG-and-Agent — dùng hybrid_search thay vì
+    semantic_search đơn thuần. BM25 giúp bắt chính xác tên thuốc BVTV,
+    tên giống, mã liều lượng mà embedding dễ bỏ sót.
+    Fallback an toàn về dense-only nếu BM25 không khả dụng.
+    """
     try:
+        # Dùng hybrid_search (Dense + BM25 + RRF) thay vì semantic_search
         result = await asyncio.to_thread(
-            semantic_search, query=query, crop=crop, season=season, top_k=top_k
+            hybrid_search, query=query, crop=crop, season=season, top_k=top_k
         )
         if result["found"]:
             chunks_text = "\n\n---\n\n".join([
-                f"[Nguồn: {c.get('source', 'Tài liệu')} | Topic: {c.get('topic', 'Nông nghiệp')}]\n{c['chunk_text']}"
+                f"[Nguồn: {c.get('source', 'Tài liệu')} | Topic: {c.get('topic', 'Nông nghiệp')}]\\n{c['chunk_text']}"
                 for c in result["chunks"]
             ])
+            retrieval_mode = result.get("retrieval_mode", "unknown")
             return RetrievalSource(
                 source_name="docs",
                 found=True,
                 data=result["chunks"],
-                data_text=f"Nội dung từ tài liệu nông nghiệp:\n{chunks_text}",
+                data_text=f"Nội dung từ tài liệu nông nghiệp [{retrieval_mode}]:\n{chunks_text}",
                 source_info=result["source_info"],
                 priority=2,  # Docs có priority thấp hơn Facts/KG
             )

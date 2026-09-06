@@ -751,6 +751,21 @@ async function loadBenchmarkResults() {
 
     _benchmarkQuestions = data.questions || [];
 
+    // ── GĐ3: Cập nhật "Lần đánh giá cuối" trong banner Evaluation Static ────
+    // Tìm câu đã evaluated có triggered_at gần nhất
+    const evalLastRunEl = document.getElementById('evalLastRunTime');
+    if (evalLastRunEl) {
+      const evaluated = _benchmarkQuestions.filter(q => q.status === 'evaluated' && q.triggered_at);
+      if (evaluated.length > 0) {
+        const latest = evaluated.reduce((a, b) =>
+          new Date(a.triggered_at) > new Date(b.triggered_at) ? a : b
+        );
+        evalLastRunEl.textContent = new Date(latest.triggered_at).toLocaleString('vi-VN');
+      } else {
+        evalLastRunEl.textContent = 'Chưa có kết quả';
+      }
+    }
+
     tbody.innerHTML = "";
     _benchmarkQuestions.forEach(q => {
       const tr = document.createElement("tr");

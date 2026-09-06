@@ -21,6 +21,10 @@ logger = logging.getLogger("monitoring")
 
 BASE_DIR = Path(__file__).parent.parent
 
+# Thời điểm server khởi động — dùng để hiển thị "kể từ khi server khởi động lúc..."
+# trong tab Monitoring Live (tránh nhầm lẫn metric in-memory với batch static)
+SERVER_START_TIME = datetime.now().isoformat()
+
 # File tham chiếu
 CALIBRATION_FILE = BASE_DIR / "calibration_results.json"
 ACCEPTANCE_FILE  = BASE_DIR / "data" / "acceptance_results.json"
@@ -454,6 +458,7 @@ def get_monitoring_stats() -> dict:
 
     return {
         "generated_at": datetime.now().isoformat(),
+        "server_start_time": SERVER_START_TIME,   # GĐ3: phân biệt live vs static
         "alerts": alerts,
         "alert_count": len(alerts),
         "tool_metrics": tool_stats,
@@ -466,6 +471,8 @@ def get_monitoring_stats() -> dict:
         "llm_judge_benchmark": judge_stats,
         "note": (
             "Các metric tool/iam/sensor/gemini_usage là in-memory (reset khi server restart). "
-            "calibration và acceptance_benchmark đọc từ file JSON."
+            "calibration và acceptance_benchmark đọc từ file JSON.\n"
+            f"Server khởi động lúc: {SERVER_START_TIME}"
         ),
     }
+
