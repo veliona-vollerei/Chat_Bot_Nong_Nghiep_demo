@@ -58,7 +58,7 @@ class RetrievalPlanResult:
 
 async def _fetch_facts(
     attribute: str,
-    crop: str,
+    crop: Optional[str],
     season: Optional[str],
     soil_type: Optional[str],
     growth_stage: Optional[str] = None,
@@ -162,7 +162,7 @@ async def _fetch_kg(
 
 async def _fetch_docs(
     query: str,
-    crop: str,
+    crop: Optional[str],
     season: Optional[str],
     top_k: int = 4,
 ) -> RetrievalSource:
@@ -308,13 +308,17 @@ async def execute_retrieval_plan(
     task_names = []
 
     # Luôn fetch docs (fallback)
+    # SỬA LỖI (2026-09-07): trước đây ép crop rỗng thành chuỗi trống trước khi
+    # gọi — dù vô hại về chức năng (semantic_search coi chuỗi trống như None),
+    # vẫn là 1 quy ước không nhất quán, dễ gây nhầm lẫn khi code thay đổi.
+    # Giờ truyền thẳng biến crop nguyên trạng (None nếu chưa xác định).
     query_str = norm_question or (" ".join(keywords) if keywords else attribute)
-    tasks.append(_fetch_docs(query_str, crop or "", season, top_k_docs))
+    tasks.append(_fetch_docs(query_str, crop, season, top_k_docs))
     task_names.append("docs")
 
     # Fetch facts cho câu định lượng
     if question_type == "định_lượng":
-        tasks.append(_fetch_facts(attribute, crop or "", season, soil_type, growth_stage))
+        tasks.append(_fetch_facts(attribute, crop, season, soil_type, growth_stage))
         task_names.append("facts")
 
     # Fetch KG cho câu phù hợp/quan hệ hoặc có pest/technique keywords

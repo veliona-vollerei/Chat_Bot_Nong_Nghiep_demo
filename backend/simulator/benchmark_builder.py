@@ -26,6 +26,7 @@ Output: benchmark_questions.json (định dạng chuẩn cho evaluator)
 """
 import json
 import random
+import re
 import argparse
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
@@ -297,7 +298,7 @@ def _build_factual_questions_fallback_no_oracle(rng: random.Random, n: int = 50)
         crop = rng.choice(CROPS_VN)
         season = rng.choice(SEASONS_VN)
         soil = rng.choice(SOILS_VN)
-        stages = ["đẻ nhánh", "làm đòng", "trỗ bông", "chín"] if crop == "lúa" else ["sinh trưởng", "ra hoa", "thu hoạch"]
+        stages = ["đẻ nhánh", "làm đòng", "trỗ bông", "chín"] + ["sinh trưởng", "ra hoa", "thu hoạch"]
         stage = rng.choice(stages)
 
         q = tmpl.format(crop=crop, season=season, soil=soil, stage=stage)
@@ -320,15 +321,16 @@ def _build_factual_questions(rng: random.Random, n: int = 50) -> list[BenchmarkQ
     import logging
     logger = logging.getLogger(__name__)
 
-    # Bước 1: Lấy toàn bộ Fact có is_quantitative=true (đủ điều kiện làm câu hỏi định lượng)
+    # Bước 1: Lấy toàn bộ Fact có is_quantitative=true (dedup theo tổ hợp đặc tính)
     with get_cursor() as cur:
         cur.execute("""
-            SELECT fact_id, crop, variety, season, soil_type, growth_stage,
+            SELECT DISTINCT ON (crop, attribute, COALESCE(variety, ''), COALESCE(season, ''), COALESCE(soil_type, ''), COALESCE(growth_stage, ''))
+                   fact_id, crop, variety, season, soil_type, growth_stage,
                    attribute, value, value_min, value_max, unit, condition_note
             FROM facts
             WHERE is_quantitative = true
               AND (effective_to IS NULL OR effective_to > NOW())   -- chỉ lấy Fact còn hiệu lực
-            ORDER BY RANDOM()
+            ORDER BY crop, attribute, COALESCE(variety, ''), COALESCE(season, ''), COALESCE(soil_type, ''), COALESCE(growth_stage, ''), RANDOM()
         """)
         rows = cur.fetchall()
 
@@ -339,49 +341,93 @@ def _build_factual_questions(rng: random.Random, n: int = 50) -> list[BenchmarkQ
         )
         return _build_factual_questions_fallback_no_oracle(rng, n)
 
-    # Bước 2: Map mỗi Fact -> 1 template câu hỏi phù hợp với attribute của nó
-    attribute_to_template = {
-        "phân đạm":  "Lượng phân đạm khuyến cáo cho {crop} vụ {season} trên đất {soil} là bao nhiêu?",
-        "năng suất": "Năng suất trung bình của {crop} trên đất {soil} là bao nhiêu tấn/ha?",
-        "phân kali": "Phân kali cần bón cho {crop} vụ {season} là bao nhiêu?",
-        "pH":        "pH đất phù hợp cho {crop} là bao nhiêu?",
-        "lượng nước tưới": "Lượng nước tưới cho {crop} giai đoạn {stage} là bao nhiêu?",
-        # thêm map cho các attribute khác có trong DB thật của bạn
-    }
-    default_template = "{attribute} khuyến cáo cho {crop} là bao nhiêu?"
+    # Shuffle danh sách facts để lấy ngẫu nhiên đại diện đa dạng
+    rows = list(rows)
+    rng.shuffle(rows)
 
     qs = []
     for i, row in enumerate(rows[:n]):
         if isinstance(row, dict):
             fact_id = row.get("fact_id")
-            crop = row.get("crop")
-            variety = row.get("variety")
-            season = row.get("season")
-            soil = row.get("soil_type")
-            growth_stage = row.get("growth_stage")
-            attribute = row.get("attribute")
+            crop = row.get("crop") or ""
+            variety = row.get("variety") or ""
+            season = row.get("season") or ""
+            soil = row.get("soil_type") or ""
+            growth_stage = row.get("growth_stage") or ""
+            attribute = row.get("attribute") or ""
             value = row.get("value")
             value_min = row.get("value_min")
             value_max = row.get("value_max")
-            unit = row.get("unit")
-            condition_note = row.get("condition_note")
+            unit = row.get("unit") or ""
+            condition_note = row.get("condition_note") or ""
         else:
             (fact_id, crop, variety, season, soil, growth_stage,
              attribute, value, value_min, value_max, unit, condition_note) = row
+            crop = crop or ""
+            variety = variety or ""
+            season = season or ""
+            soil = soil or ""
+            growth_stage = growth_stage or ""
+            attribute = attribute or ""
+            unit = unit or ""
+            condition_note = condition_note or ""
 
-        tmpl = attribute_to_template.get(attribute, default_template)
-        q = tmpl.format(
-            crop=crop or "", season=season or "", soil=soil or "",
-            stage=growth_stage or "", attribute=attribute or "",
-        )
+        # Chuẩn hóa soil_str để tránh lỗi lặp "đất đất" (vd "đất đỏ" -> "trên đất đỏ", "phù sa" -> "trên đất phù sa")
+        if soil.strip():
+            soil_clean = soil.strip()
+            soil_display = soil_clean if soil_clean.lower().startswith("đất ") else f"đất {soil_clean}"
+            soil_part = f"trên {soil_display}"
+        else:
+            soil_part = ""
+
+        season_part = f"vụ {season.strip()}" if season.strip() else ""
+        stage_part = f"giai đoạn {growth_stage.strip()}" if growth_stage.strip() else ""
+        variety_part = f"giống {variety.strip()}" if variety.strip() else ""
+
+        # Bước 2 & 3: Template tự nhiên phủ toàn bộ attribute có trong DB
+        attr_clean = attribute.strip().lower()
+        if attr_clean == "phân đạm":
+            q_raw = f"Lượng phân đạm khuyến cáo cho {crop} {variety_part} {season_part} {soil_part} là bao nhiêu?"
+        elif attr_clean == "phân lân":
+            q_raw = f"Lượng phân lân cần bón cho {crop} {variety_part} {season_part} {soil_part} là bao nhiêu?"
+        elif attr_clean == "phân kali":
+            q_raw = f"Phân kali cần bón cho {crop} {variety_part} {season_part} {stage_part} là bao nhiêu?"
+        elif attr_clean == "lượng nước tưới":
+            q_raw = f"Lượng nước tưới cho {crop} {variety_part} {stage_part} là bao nhiêu?"
+        elif attr_clean == "chu kỳ tưới":
+            q_raw = f"Chu kỳ tưới nước phù hợp cho {crop} {stage_part} là bao lâu một lần?"
+        elif attr_clean == "ph":
+            q_raw = f"Độ pH đất phù hợp cho cây {crop} là bao nhiêu?"
+        elif attr_clean == "năng suất":
+            unit_suffix = f" ({unit})" if unit and unit not in ["tấn/ha", "tấn/ha/năm"] else " tấn/ha"
+            q_raw = f"Năng suất trung bình của {crop} {variety_part} {soil_part} là bao nhiêu{unit_suffix}?"
+        elif attr_clean == "mật độ gieo sạ":
+            q_raw = f"Mật độ gieo sạ khuyến cáo cho {crop} {variety_part} là bao nhiêu kg/ha?"
+        elif attr_clean == "mật độ trồng":
+            q_raw = f"Mật độ trồng khuyến cáo cho cây {crop} {variety_part} là bao nhiêu?"
+        elif attr_clean == "thời gian sinh trưởng":
+            q_raw = f"Thời gian sinh trưởng của {crop} {variety_part} {season_part} thường kéo dài bao nhiêu ngày?"
+        elif attr_clean == "chiều sâu làm đất":
+            q_raw = f"Chiều sâu làm đất phù hợp cho {crop} {soil_part} là bao nhiêu cm?"
+        elif attr_clean == "mực nước ruộng":
+            q_raw = f"Mực nước ruộng duy trì cho {crop} {stage_part} là bao nhiêu cm?"
+        elif attr_clean == "thời gian chong đèn":
+            q_raw = f"Thời gian chong đèn kích thích ra hoa cho {crop} là bao nhiêu đêm?"
+        elif attr_clean == "thời gian xiết nước":
+            q_raw = f"Thời gian xiết nước xử lý ra hoa cho {crop} là bao nhiêu ngày?"
+        else:
+            q_raw = f"{attribute} khuyến cáo cho {crop} {variety_part} {season_part} {soil_part} là bao nhiêu?"
+
+        # Làm sạch khoảng trắng thừa
+        q = re.sub(r"\s+", " ", q_raw).strip()
 
         # Oracle answer LẤY THẲNG từ Fact — không phải rubric chung chung
         if value_min is not None and value_max is not None:
             vmin_str = f"{value_min:g}" if isinstance(value_min, (int, float)) else str(value_min)
             vmax_str = f"{value_max:g}" if isinstance(value_max, (int, float)) else str(value_max)
-            oracle_answer = f"{vmin_str}-{vmax_str} {unit or ''}".strip()
+            oracle_answer = f"{vmin_str}-{vmax_str} {unit}".strip()
         else:
-            oracle_answer = f"{value} {unit or ''}".strip()
+            oracle_answer = f"{value} {unit}".strip()
 
         qs.append(BenchmarkQuestion(
             q_id=f"factual_{i+1:03d}",

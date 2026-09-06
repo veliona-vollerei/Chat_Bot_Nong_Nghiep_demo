@@ -141,6 +141,19 @@ class GeminiKeyManager:
                 # Key này không dùng được, thử key tiếp theo
                 self._current_idx = (self._current_idx + 1) % n
 
+            # Nếu tất cả các keys đều đang trong cooldown (rate_limited), đợi key sớm nhất phục hồi
+            rate_limited_keys = [k for k in self._keys if k["status"] == "rate_limited"]
+            if rate_limited_keys:
+                earliest_cooldown = min(k["cooldown_until"] for k in rate_limited_keys)
+                wait_time = max(0.1, earliest_cooldown - time.time())
+                if wait_time <= self._cooldown_seconds + 5:
+                    logger.info(f"⏳ Tất cả key đang cooldown. Tạm dừng {wait_time:.1f}s để phục hồi key...")
+                    time.sleep(wait_time + 0.5)
+                    for idx, k in enumerate(self._keys):
+                        if self._is_key_available(k):
+                            self._current_idx = idx
+                            return self._get_client(idx), idx
+
             raise AllKeysExhaustedError(
                 f"Tất cả {n} Gemini API key đều không khả dụng "
                 f"(rate_limited / invalid). Vui lòng thêm key mới hoặc chờ."

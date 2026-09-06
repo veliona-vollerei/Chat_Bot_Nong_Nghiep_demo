@@ -48,7 +48,7 @@ def embed_passage(text: str) -> list:
 
 def semantic_search(
     query: str,
-    crop: str = "lúa",
+    crop: Optional[str] = None,
     season: Optional[str] = None,
     topic: Optional[str] = None,
     top_k: int = 5,
@@ -198,7 +198,7 @@ def get_chunk_count() -> int:
 
 def hybrid_search(
     query: str,
-    crop: str = "",
+    crop: Optional[str] = None,
     season: Optional[str] = None,
     top_k: int = 5,
 ) -> dict:

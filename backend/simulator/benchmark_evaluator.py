@@ -174,34 +174,59 @@ def _synthesize_answer_for_eval(question: str) -> tuple[str, float]:
         season = routing.get("season")
         keywords = routing.get("topic_keywords", [])
 
-        # Tầng 3: Document Store (luôn dùng cho factual QA)
-        from backend.layers.layer3_docs import semantic_search
-        search_q = " ".join(keywords) if keywords else question
-        doc_result = semantic_search(query=search_q, crop=crop or "lúa", season=season, top_k=4)
-
         answer_data = ""
         source_info = "Kho tri thức Nông nghiệp"
 
-        if doc_result.get("found"):
-            chunks_text = "\n\n---\n\n".join([
-                f"[Nguồn: {c.get('source', 'Tài liệu')}]\n{c['chunk_text']}"
-                for c in doc_result["chunks"]
-            ])
-            answer_data = f"Nội dung từ kho tài liệu nông nghiệp:\n{chunks_text}"
-            source_info = doc_result.get("source_info", "Kho tài liệu")
+        # Tầng 1: Structured Fact Store (tra cứu chính xác cho câu hỏi định lượng nông học)
+        from backend.db.postgres import get_cursor
+        try:
+            with get_cursor() as cur:
+                cur.execute("""
+                    SELECT fact_id, crop, variety, season, soil_type, growth_stage,
+                           attribute, value, value_min, value_max, unit, condition_note, source
+                    FROM facts
+                    WHERE %s ILIKE '%%' || crop || '%%'
+                      AND %s ILIKE '%%' || attribute || '%%'
+                    ORDER BY
+                        CASE WHEN variety IS NOT NULL AND %s ILIKE '%%' || variety || '%%' THEN 0 ELSE 1 END,
+                        CASE WHEN season IS NOT NULL AND %s ILIKE '%%' || season || '%%' THEN 0 ELSE 1 END
+                    LIMIT 5
+                """, [question, question, question, question])
+                matched_facts = cur.fetchall()
 
-        # Tầng 1: Fact store fallback (nếu không có doc)
-        if not answer_data and q_type == "định_lượng":
-            from backend.layers.layer1_facts import get_fact
-            keyword = " ".join(keywords) if keywords else question[:50]
-            fact_result = get_fact(attribute=keyword, crop=crop, season=season)
-            if fact_result.get("found"):
+            if matched_facts:
                 facts_text = "\n".join([
-                    f"- {r['attribute']}: {r['value']} {r.get('unit', '')} ({r.get('condition_note', '')})"
-                    for r in fact_result["results"]
+                    f"- Cây: {r['crop']}" + (f" (giống {r['variety']})" if r.get('variety') else "") +
+                    f" | {r['attribute']}: {r['value']} {r.get('unit', '')}" +
+                    (f" (vụ {r['season']})" if r.get('season') else "") +
+                    (f" (đất {r['soil_type']})" if r.get('soil_type') else "") +
+                    (f" (giai đoạn {r['growth_stage']})" if r.get('growth_stage') else "") +
+                    (f" - Lưu ý: {r.get('condition_note', '')}" if r.get('condition_note') else "")
+                    for r in matched_facts
                 ])
-                answer_data = f"Số liệu từ cơ sở dữ liệu:\n{facts_text}"
-                source_info = "Fact Store"
+                answer_data = f"Số liệu định lượng từ cơ sở dữ liệu (Fact Store):\n{facts_text}"
+                source_info = matched_facts[0].get("source") or "Fact Store"
+        except Exception as e:
+            logger.warning(f"Fact store query error in eval: {e}")
+
+        # Tầng 3: Document Store (bổ sung tài liệu khuyến nông nếu có qua Hybrid Search)
+        try:
+            from backend.layers.layer3_docs import hybrid_search
+            search_q = " ".join(keywords) if keywords else question
+            doc_result = hybrid_search(query=search_q, crop=crop, season=season, top_k=3)
+
+            if doc_result.get("found"):
+                chunks_text = "\n\n---\n\n".join([
+                    f"[Nguồn: {c.get('source', 'Tài liệu')}]\n{c['chunk_text']}"
+                    for c in doc_result["chunks"]
+                ])
+                if answer_data:
+                    answer_data += f"\n\nTài liệu tham khảo bổ sung:\n{chunks_text}"
+                else:
+                    answer_data = f"Nội dung từ kho tài liệu nông nghiệp:\n{chunks_text}"
+                    source_info = doc_result.get("source_info", "Kho tài liệu")
+        except Exception as e:
+            logger.warning(f"Doc store query error in eval: {e}")
 
         if not answer_data:
             # Không có dữ liệu — trả lời từ chối
@@ -355,6 +380,7 @@ def evaluate_benchmark(
                 })
                 if not passed:
                     reason = f"Judge avg score {avg_score:.0f} < {PASS_THRESHOLD_SCORE}"
+                time.sleep(1.0)
 
         elif cat == "no_answer_hallucination_guard":
             if schema_check_only:
@@ -378,11 +404,10 @@ def evaluate_benchmark(
                     "reason": reason,
                     "question": q_text,
                     "chatbot_answer": chatbot_answer,
-                    "oracle_answer": oracle_answer,
-                    "factual_score": 100.0 if passed else 0.0,
-                    "semantic_score": 100.0 if passed else 0.0,
+                    "oracle_answer": "[Không có dữ liệu - Phải từ chối trả lời]",
                     "ai_verdict": "correct" if passed else "incorrect",
                 })
+                time.sleep(1.0)
 
         elif cat in ["vietnamese_typo_robustness", "irrigation_history", "irrigation_schedule", "multi_turn_context"]:
             # Schema-check-only: bỏ qua Gemini hoàn toàn — chỉ mark pass
