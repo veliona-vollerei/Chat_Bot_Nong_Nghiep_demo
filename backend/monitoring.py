@@ -50,6 +50,12 @@ _stale_count  = 0
 _fresh_count  = 0
 _missing_count = 0
 
+# ─── Validator Bypass Counter (GD3 Guardrail) ──────────────────────────────────────
+# Đếm số lần validator bị fail-closed do hết quota (AllKeysExhaustedError).
+# Nếu cao (>= 5 lần) → CRITICAL alert: hệ thống đang chạy không có guardrail.
+_validator_bypass_count = 0
+_validator_bypass_log: List[dict] = []  # Tối đa 200 bản ghi
+
 # ─── Gemini Token & Cost Tracking (GĐ3 / P2) ──────────────────────────────────
 # Giá USD / 1M tokens (theo biểu giá Google AI Studio pay-as-you-go)
 GEMINI_PRICING_PER_1M = {
@@ -185,6 +191,29 @@ def record_sensor_quality(quality_flag: str):
         _missing_count += 1
 
 
+def record_validator_bypass(reason: str = "api_exhausted"):
+    """
+    Ghi nhận một lần validator bị fail-closed do hết quota API.
+
+    Được gọi từ validator.py khi AllKeysExhaustedError xảy ra.
+    Nếu count >= 5 → _compute_alerts() sẽ phát CRITICAL alert VALIDATOR_BYPASSED.
+    """
+    global _validator_bypass_count
+    _validator_bypass_count += 1
+    _validator_bypass_log.append({
+        "timestamp": datetime.now().isoformat(),
+        "reason": reason,
+        "count_at_event": _validator_bypass_count,
+    })
+    # Giữ tối đa 200 bản ghi gần nhất
+    if len(_validator_bypass_log) > 200:
+        _validator_bypass_log.pop(0)
+    logger.critical(
+        f"[VALIDATOR_BYPASSED] Guardrail fail-closed lần thứ {_validator_bypass_count} "
+        f"do hết quota Gemini API. Reason: {reason}"
+    )
+
+
 def _compute_p95(latencies: list) -> float:
     if not latencies:
         return 0.0
@@ -304,6 +333,27 @@ def _compute_alerts(
                     "Kiểm tra quota API và cân nhắc cache/batching."
                 ),
             })
+
+    # 7. Validator bypass (guardrail fail-closed) — cần react ngay
+    if _validator_bypass_count >= 5:
+        alerts.append({
+            "level": "CRITICAL",
+            "code": "VALIDATOR_BYPASSED",
+            "message": (
+                f"Validator đã fail-closed {_validator_bypass_count} lần do hết quota Gemini API — "
+                "hệ thống đang chạy không có guardrail. "
+                "Kiểm tra quota API key và thêm key mới nếu cần."
+            ),
+        })
+    elif _validator_bypass_count > 0:
+        alerts.append({
+            "level": "WARNING",
+            "code": "VALIDATOR_BYPASSED",
+            "message": (
+                f"Validator đã fail-closed {_validator_bypass_count} lần do hết quota Gemini API. "
+                "Theo dõi thêm nếu tiếp tục tăng."
+            ),
+        })
 
     return alerts
 
@@ -469,6 +519,11 @@ def get_monitoring_stats() -> dict:
         "calibration": calibration_stats,
         "acceptance_benchmark": acceptance_stats,
         "llm_judge_benchmark": judge_stats,
+        # GĐ3 Guardrail: số lần validator bị fail-closed do hết quota
+        "validator_guardrail": {
+            "bypass_count": _validator_bypass_count,
+            "recent_bypasses": _validator_bypass_log[-10:],  # 10 lần gần nhất
+        },
         "note": (
             "Các metric tool/iam/sensor/gemini_usage là in-memory (reset khi server restart). "
             "calibration và acceptance_benchmark đọc từ file JSON.\n"

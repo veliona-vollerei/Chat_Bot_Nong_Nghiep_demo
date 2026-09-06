@@ -57,19 +57,19 @@ def semantic_search(
     Semantic search trong ChromaDB.
     Filter metadata trước (where clause) → search sau.
     """
-    from backend.db.chroma_db import get_collection
-    col = get_collection()
-
-    if col.count() == 0:
-        return {"found": False, "chunks": [], "source_info": "Kho tài liệu trống. Hãy chạy scripts/ingest_chunks.py trước."}
-
-    # GĐ1 Mục 1: crop=None → không filter, tìm trên toàn corpus
-    EXACT_FILTER_CROPS = {"lúa", "vải", "nhãn", "cam", "bưởi", "xoài", "chuối", "dứa", "na", "chanh leo", "mận", "cà phê"}
-    use_crop_filter = crop is not None and crop.lower() in EXACT_FILTER_CROPS
-
-    query_embedding = embed_query(query)
-
     try:
+        from backend.db.chroma_db import get_collection
+        col = get_collection()
+
+        if col.count() == 0:
+            return {"found": False, "chunks": [], "source_info": "Kho tài liệu trống. Hãy chạy scripts/ingest_chunks.py trước."}
+
+        # GĐ1 Mục 1: crop=None → không filter, tìm trên toàn corpus
+        EXACT_FILTER_CROPS = {"lúa", "vải", "nhãn", "cam", "bưởi", "xoài", "chuối", "dứa", "na", "chanh leo", "mận", "cà phê"}
+        use_crop_filter = crop is not None and crop.lower() in EXACT_FILTER_CROPS
+
+        query_embedding = embed_query(query)
+
         if use_crop_filter:
             where = {"$or": [{"crop": {"$eq": crop}}, {"crop": {"$eq": "nông nghiệp tổng quát"}}]}
             try:
@@ -93,16 +93,8 @@ def semantic_search(
                 include=["documents", "metadatas", "distances"]
             )
     except Exception as e:
-        logger.error(f"ChromaDB query error: {e}")
-        try:
-            results = col.query(
-                query_embeddings=[query_embedding],
-                n_results=min(top_k * 2, col.count()),
-                include=["documents", "metadatas", "distances"]
-            )
-        except Exception as e2:
-            logger.error(f"ChromaDB fallback query error: {e2}")
-            return {"found": False, "chunks": [], "source_info": ""}
+        logger.warning(f"Semantic search / ChromaDB query error: {e}")
+        return {"found": False, "chunks": [], "source_info": ""}
 
     if not results["ids"][0]:
         return {"found": False, "chunks": [], "source_info": ""}

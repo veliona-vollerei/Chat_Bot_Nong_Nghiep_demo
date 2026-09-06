@@ -169,36 +169,11 @@ def try_fast_path(
     q = question.strip()
     keywords = _extract_topic_keywords(q)
 
-    # ─── Layer 0: IoT / Farm sensor ──────────────────────────────────────
-    # Ưu tiên cao nhất nếu có farm context hoặc keyword IoT rõ ràng
-    if farm_id or zone_id:
-        logger.debug(f"FastPath: IoT route (farm_id={farm_id}, zone_id={zone_id})")
-        return {
-            "question_type": "diễn_giải",
-            "crop": None, "season": None, "soil_type": None,
-            "growth_stage": None, "variety": None,
-            "topic_keywords": keywords,
-            "confidence": "high",
-            "clarification_question": None,
-            "error": None,
-            "decision_path": "fast_path → Layer0_IoT_FarmContext",
-            "reason_code": "FARM_CONTEXT_PRESENT",
-        }
-
-    for pattern in _IOT_RE:
-        if pattern.search(q):
-            logger.debug(f"FastPath: IoT keyword match")
-            return {
-                "question_type": "diễn_giải",
-                "crop": None, "season": None, "soil_type": None,
-                "growth_stage": None, "variety": None,
-                "topic_keywords": keywords,
-                "confidence": "high",
-                "clarification_question": None,
-                "error": None,
-                "decision_path": "fast_path → Layer0_IoT_Keyword",
-                "reason_code": "IOT_KEYWORD_MATCH",
-            }
+    # SỬA LỖI (2026-09-06), lần 2: pattern IoT như \bkhu [A-Za-z]\b khớp cả
+    # câu định lượng có nhắc tên khu (vd "...khu A"), khiến Layer 0 vẫn cướp
+    # mất phân loại dù đã bỏ điều kiện farm_id đơn thuần. Sửa triệt để: kiểm
+    # tra Out-of-scope/Quantitative/Relation/Explanation (ý định cụ thể)
+    # TRƯỚC, IoT-keyword chỉ là lựa chọn khi không có ý định cụ thể nào khác.
 
     # ─── Layer 1: Ngoài phạm vi ──────────────────────────────────────────
     # Check trước để tránh false positive từ các layer sau
@@ -277,6 +252,42 @@ def try_fast_path(
                     "decision_path": "fast_path → Layer4_Explanation",
                     "reason_code": "EXPLANATION_KEYWORD_MATCH",
                 }
+
+    # ─── Layer 0 (giờ chạy sau cùng): IoT / Farm sensor ───────────────────
+    # Chỉ fire khi KHÔNG có ý định cụ thể nào khác (định lượng/quan hệ/diễn
+    # giải/ngoài phạm vi) đã khớp ở trên — tránh việc một câu định lượng có
+    # nhắc tên khu (vd "khu A") bị cướp mất phân loại đúng.
+    for pattern in _IOT_RE:
+        if pattern.search(q):
+            logger.debug(f"FastPath: IoT keyword match (farm_id={farm_id}, zone_id={zone_id})")
+            return {
+                "question_type": "diễn_giải",
+                "crop": None, "season": None, "soil_type": None,
+                "growth_stage": None, "variety": None,
+                "topic_keywords": keywords,
+                "confidence": "high",
+                "clarification_question": None,
+                "error": None,
+                "decision_path": "fast_path → Layer0_IoT_Keyword",
+                "reason_code": "IOT_KEYWORD_MATCH",
+            }
+
+    # farm_id/zone_id có mặt nhưng câu hỏi không khớp rule cụ thể nào và rất
+    # ngắn/mơ hồ (vd "có gì mới không?") → coi là truy vấn tình trạng farm
+    # chung chung thay vì bắt Gemini xử lý một câu gần như vô nghĩa.
+    if (farm_id or zone_id) and not _has_agriculture_context(q) and len(q) <= 20:
+        logger.debug(f"FastPath: bare farm context, no clear intent (farm_id={farm_id}, zone_id={zone_id})")
+        return {
+            "question_type": "diễn_giải",
+            "crop": None, "season": None, "soil_type": None,
+            "growth_stage": None, "variety": None,
+            "topic_keywords": keywords,
+            "confidence": "high",
+            "clarification_question": None,
+            "error": None,
+            "decision_path": "fast_path → Layer0_IoT_FarmContext",
+            "reason_code": "FARM_CONTEXT_PRESENT_NO_SPECIFIC_INTENT",
+        }
 
     # ─── Không khớp rule nào → fallback Gemini ───────────────────────────
     logger.debug(f"FastPath: No rule matched → fallback to Gemini")

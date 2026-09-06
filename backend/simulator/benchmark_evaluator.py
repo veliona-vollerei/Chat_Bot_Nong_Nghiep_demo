@@ -31,7 +31,7 @@ from typing import Optional, List, Dict
 
 from backend.iam.iam import build_farm_context, check_farm_access
 from backend.tools.nextfarm_tools import get_latest_sensor, get_device_status
-from backend.router.query_router import route_question, synthesize_answer
+from backend.router.query_router import route_question_with_fast_path, synthesize_answer
 
 logger = logging.getLogger("benchmark_evaluator")
 
@@ -168,7 +168,7 @@ def _synthesize_answer_for_eval(question: str) -> tuple[str, float]:
     """
     t0 = time.time()
     try:
-        routing = route_question(question)
+        routing = route_question_with_fast_path(question)
         q_type = routing.get("question_type", "diễn_giải")
         crop = routing.get("crop")
         season = routing.get("season")
@@ -390,7 +390,7 @@ def evaluate_benchmark(
                 passed = True
                 reason = "schema_check_only — bỏ qua Gemini call"
             else:
-                routing = route_question(q_text)
+                routing = route_question_with_fast_path(q_text)
                 passed = routing is not None and "question_type" in routing
                 tool_total_count += 1
                 if passed:

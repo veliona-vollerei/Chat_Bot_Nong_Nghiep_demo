@@ -169,11 +169,21 @@ def validate_answer(
             "confidence": "low",
         }
     except AllKeysExhaustedError as e:
-        # Khi API exhausted → skip validation (không block user)
-        logger.warning(f"Validator AllKeysExhausted → skip validation: {e}")
+        # Fail-closed cứng: khi hết quota Gemini, guardrail PHẢI fail về phía an toàn.
+        # Trả valid=False để caller ép abstain, không để câu trả lời chưa được kiểm tra đi qua.
+        # Ghi CRITICAL vào monitoring để dashboard và on-call biết.
+        logger.critical(
+            f"Validator AllKeysExhausted → fail-closed (valid=False). "
+            f"Guardrail bị vô hiệu do hết quota API. Chi tiết: {e}"
+        )
+        try:
+            from backend.monitoring import record_validator_bypass
+            record_validator_bypass(reason="api_exhausted")
+        except Exception:
+            pass  # Đừng để monitoring failure làm hỏng fail-closed path
         return {
-            "valid": True,
-            "reason": "api_exhausted_skip",
+            "valid": False,
+            "reason": "api_exhausted_fail_closed",
             "hallucination_detected": False,
             "confidence": "low",
         }
