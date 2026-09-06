@@ -47,6 +47,7 @@ class BenchmarkQuestion:
     device_id: Optional[str] = None
     oracle_answer: Optional[str] = None   # Expected answer (None = no-data/unauthorized)
     oracle_source: Optional[str] = None   # "sensor" | "fact" | "none"
+    oracle_fact_id: Optional[int] = None  # NEW FIELD
     expected_iam_result: str = "allow"    # "allow" | "deny"
     expected_quality_flag: Optional[str] = None  # "fresh" | "stale" | "missing"
     notes: Optional[str] = None
@@ -275,8 +276,8 @@ def _build_iam_questions(farms: list, rng: random.Random, n: int = 20) -> list[B
     return qs
 
 
-def _build_factual_questions(rng: random.Random, n: int = 50) -> list[BenchmarkQuestion]:
-    """50 câu: câu hỏi thực tế nông nghiệp (từ fact store / doc store)."""
+def _build_factual_questions_fallback_no_oracle(rng: random.Random, n: int = 50) -> list[BenchmarkQuestion]:
+    """Fallback 50 câu: câu hỏi thực tế nông nghiệp (sinh ngẫu nhiên, không oracle_answer)."""
     templates = [
         ("Lượng phân đạm khuyến cáo cho {crop} vụ {season} trên đất {soil} là bao nhiêu?", "định_lượng"),
         ("Năng suất trung bình của {crop} trên đất {soil} là bao nhiêu tấn/ha?", "định_lượng"),
@@ -308,6 +309,94 @@ def _build_factual_questions(rng: random.Random, n: int = 50) -> list[BenchmarkQ
             expected_iam_result="allow",
             notes=f"type={qtype}",
         ))
+    return qs
+
+def _build_factual_questions(rng: random.Random, n: int = 50) -> list[BenchmarkQuestion]:
+    """
+    50 câu: sinh TỪ Fact thật trong database, không sinh ngẫu nhiên.
+    Mỗi câu có oracle_answer lấy trực tiếp từ bản ghi Fact tương ứng.
+    """
+    from backend.db.postgres import get_cursor
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # Bước 1: Lấy toàn bộ Fact có is_quantitative=true (đủ điều kiện làm câu hỏi định lượng)
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT fact_id, crop, variety, season, soil_type, growth_stage,
+                   attribute, value, value_min, value_max, unit, condition_note
+            FROM facts
+            WHERE is_quantitative = true
+              AND (effective_to IS NULL OR effective_to > NOW())   -- chỉ lấy Fact còn hiệu lực
+            ORDER BY RANDOM()
+        """)
+        rows = cur.fetchall()
+
+    if not rows:
+        logger.warning(
+            "⚠️ Không có Fact nào trong DB để sinh câu hỏi thật — "
+            "fallback sang câu hỏi KHÔNG có oracle_answer (chỉ nên dùng tạm khi DB rỗng)."
+        )
+        return _build_factual_questions_fallback_no_oracle(rng, n)
+
+    # Bước 2: Map mỗi Fact -> 1 template câu hỏi phù hợp với attribute của nó
+    attribute_to_template = {
+        "phân đạm":  "Lượng phân đạm khuyến cáo cho {crop} vụ {season} trên đất {soil} là bao nhiêu?",
+        "năng suất": "Năng suất trung bình của {crop} trên đất {soil} là bao nhiêu tấn/ha?",
+        "phân kali": "Phân kali cần bón cho {crop} vụ {season} là bao nhiêu?",
+        "pH":        "pH đất phù hợp cho {crop} là bao nhiêu?",
+        "lượng nước tưới": "Lượng nước tưới cho {crop} giai đoạn {stage} là bao nhiêu?",
+        # thêm map cho các attribute khác có trong DB thật của bạn
+    }
+    default_template = "{attribute} khuyến cáo cho {crop} là bao nhiêu?"
+
+    qs = []
+    for i, row in enumerate(rows[:n]):
+        if isinstance(row, dict):
+            fact_id = row.get("fact_id")
+            crop = row.get("crop")
+            variety = row.get("variety")
+            season = row.get("season")
+            soil = row.get("soil_type")
+            growth_stage = row.get("growth_stage")
+            attribute = row.get("attribute")
+            value = row.get("value")
+            value_min = row.get("value_min")
+            value_max = row.get("value_max")
+            unit = row.get("unit")
+            condition_note = row.get("condition_note")
+        else:
+            (fact_id, crop, variety, season, soil, growth_stage,
+             attribute, value, value_min, value_max, unit, condition_note) = row
+
+        tmpl = attribute_to_template.get(attribute, default_template)
+        q = tmpl.format(
+            crop=crop or "", season=season or "", soil=soil or "",
+            stage=growth_stage or "", attribute=attribute or "",
+        )
+
+        # Oracle answer LẤY THẲNG từ Fact — không phải rubric chung chung
+        if value_min is not None and value_max is not None:
+            vmin_str = f"{value_min:g}" if isinstance(value_min, (int, float)) else str(value_min)
+            vmax_str = f"{value_max:g}" if isinstance(value_max, (int, float)) else str(value_max)
+            oracle_answer = f"{vmin_str}-{vmax_str} {unit or ''}".strip()
+        else:
+            oracle_answer = f"{value} {unit or ''}".strip()
+
+        qs.append(BenchmarkQuestion(
+            q_id=f"factual_{i+1:03d}",
+            category="agricultural_factual_qa",
+            question=q,
+            oracle_source="fact",
+            oracle_answer=oracle_answer,          # ← THẬT, lấy từ DB
+            oracle_fact_id=fact_id,                # ← lưu lại để truy vết/debug
+            expected_iam_result="allow",
+            notes=f"crop={crop}, variety={variety}, condition={condition_note}",
+        ))
+
+    if len(qs) < n:
+        logger.warning(f"Chỉ có {len(qs)}/{n} Fact đủ điều kiện — cần bổ sung thêm Fact vào DB.")
+
     return qs
 
 

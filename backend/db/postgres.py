@@ -237,6 +237,25 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_facts_crop ON facts(crop);
     CREATE INDEX IF NOT EXISTS idx_facts_growth_stage ON facts(growth_stage);
     CREATE INDEX IF NOT EXISTS idx_facts_verification ON facts(verification_status);
+    -- ─── Bổ sung theo Review_v1: variety, applicability có cấu trúc, value range, nguồn, hiệu lực ───
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS variety TEXT;                    -- giống cây trồng (VD: "OM5451", "Nhị ưu 838")
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS cultivation_method TEXT;         -- "hữu cơ" | "thâm canh" | "tưới nhỏ giọt" | "tưới tràn" ...
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS applicability JSONB;             -- điều kiện áp dụng có cấu trúc, VD: {"canh_tac": "huu_co", "vung": ["dong_bang_song_cuu_long"]}
+
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS value_min FLOAT;                 -- giá trị nhỏ nhất của khoảng khuyến cáo
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS value_max FLOAT;                 -- giá trị lớn nhất
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS tolerance FLOAT;                 -- sai số chấp nhận được (VD: ±5%)
+
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS source_page INT;                 -- số trang trong tài liệu gốc
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS source_section TEXT;             -- mục/chương trong tài liệu gốc (VD: "3.2")
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS publication_date DATE;           -- ngày tài liệu gốc được xuất bản (khác effective_date)
+
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS effective_to DATE;               -- ngày hết hiệu lực (NULL = còn hiệu lực)
+    ALTER TABLE facts ADD COLUMN IF NOT EXISTS supersedes INT REFERENCES facts(fact_id);  -- fact_id của bản ghi bị thay thế bởi bản ghi này
+
+    CREATE INDEX IF NOT EXISTS idx_facts_variety ON facts(variety);
+    CREATE INDEX IF NOT EXISTS idx_facts_effective_to ON facts(effective_to);
+    CREATE INDEX IF NOT EXISTS idx_facts_supersedes ON facts(supersedes);
 
     -- GĐ1 Mục 13: Audit log cho cross-farm authorization events
     CREATE TABLE IF NOT EXISTS auth_audit_log (
